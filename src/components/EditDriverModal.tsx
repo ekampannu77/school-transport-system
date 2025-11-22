@@ -6,10 +6,11 @@ import { X } from 'lucide-react'
 interface Driver {
   id: string
   name: string
-  licenseNumber: string
+  role: string
+  licenseNumber: string | null
   phone: string
   address: string | null
-  licenseExpiry: string
+  licenseExpiry: string | null
   status: string
 }
 
@@ -25,6 +26,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
+    role: 'driver',
     licenseNumber: '',
     phone: '',
     address: '',
@@ -36,10 +38,11 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
     if (driver) {
       setFormData({
         name: driver.name,
-        licenseNumber: driver.licenseNumber,
+        role: driver.role,
+        licenseNumber: driver.licenseNumber || '',
         phone: driver.phone,
         address: driver.address || '',
-        licenseExpiry: new Date(driver.licenseExpiry).toISOString().split('T')[0],
+        licenseExpiry: driver.licenseExpiry ? new Date(driver.licenseExpiry).toISOString().split('T')[0] : '',
         status: driver.status,
       })
     }
@@ -86,7 +89,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
       <div className="card max-w-md w-full p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Edit Driver</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Edit Driver/Conductor</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -121,18 +124,51 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              License Number *
+              Role *
             </label>
-            <input
-              type="text"
-              value={formData.licenseNumber}
-              onChange={(e) =>
-                setFormData({ ...formData, licenseNumber: e.target.value })
-              }
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="input-field"
-              required
-            />
+            >
+              <option value="driver">Driver</option>
+              <option value="conductor">Conductor</option>
+            </select>
           </div>
+
+          {formData.role === 'driver' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  License Number *
+                </label>
+                <input
+                  type="text"
+                  value={formData.licenseNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, licenseNumber: e.target.value })
+                  }
+                  className="input-field"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  License Expiry *
+                </label>
+                <input
+                  type="date"
+                  value={formData.licenseExpiry}
+                  onChange={(e) =>
+                    setFormData({ ...formData, licenseExpiry: e.target.value })
+                  }
+                  className="input-field"
+                  required
+                />
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -160,21 +196,6 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
               }
               className="input-field"
               rows={2}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              License Expiry *
-            </label>
-            <input
-              type="date"
-              value={formData.licenseExpiry}
-              onChange={(e) =>
-                setFormData({ ...formData, licenseExpiry: e.target.value })
-              }
-              className="input-field"
-              required
             />
           </div>
 

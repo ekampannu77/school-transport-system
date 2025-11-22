@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Bus, DollarSign, AlertTriangle, Home, User, MapPin } from 'lucide-react'
 
@@ -22,10 +23,21 @@ export default function Navigation() {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Bus className="h-8 w-8 text-primary-600" />
-              <span className="ml-2 text-xl font-bold text-gray-900">
-                School Transport
-              </span>
+              <Image
+                src="/asm-logo.png"
+                alt="ASM Public School Logo"
+                width={48}
+                height={48}
+                className="h-12 w-12 object-contain"
+              />
+              <div className="ml-3">
+                <div className="text-lg font-bold text-gray-900 leading-tight">
+                  ASM Public School
+                </div>
+                <div className="text-xs text-gray-600">
+                  Transport Management
+                </div>
+              </div>
             </div>
             <div className="hidden sm:ml-8 sm:flex sm:space-x-4">
               {links.map((link) => {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { User, Plus, Edit, Trash2, Phone, MapPin, AlertCircle } from 'lucide-react'
 import AddDriverModal from './AddDriverModal'
 import EditDriverModal from './EditDriverModal'
@@ -8,10 +9,11 @@ import EditDriverModal from './EditDriverModal'
 interface DriverData {
   id: string
   name: string
-  licenseNumber: string
+  role: string
+  licenseNumber: string | null
   phone: string
   address: string | null
-  licenseExpiry: string
+  licenseExpiry: string | null
   status: 'active' | 'inactive'
   busRoutes: Array<{
     bus: {
@@ -27,6 +29,7 @@ interface DriverData {
 }
 
 export default function DriversTable() {
+  const router = useRouter()
   const [drivers, setDrivers] = useState<DriverData[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -38,9 +41,10 @@ export default function DriversTable() {
     try {
       const response = await fetch('/api/drivers')
       const data = await response.json()
-      setDrivers(data)
+      setDrivers(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching drivers:', error)
+      setDrivers([])
     } finally {
       setLoading(false)
     }
@@ -123,7 +127,10 @@ export default function DriversTable() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Driver Details
+                  Name & Details
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -144,7 +151,11 @@ export default function DriversTable() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {drivers.map((driver) => (
-                <tr key={driver.id} className="hover:bg-gray-50">
+                <tr
+                  key={driver.id}
+                  onClick={() => router.push(`/drivers/${driver.id}`)}
+                  className="hover:bg-gray-50 cursor-pointer"
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
@@ -154,9 +165,14 @@ export default function DriversTable() {
                         <div className="text-sm font-medium text-gray-900">
                           {driver.name}
                         </div>
-                        <div className="text-sm text-gray-500">{driver.licenseNumber}</div>
+                        <div className="text-sm text-gray-500">{driver.licenseNumber || 'N/A'}</div>
                       </div>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`badge ${driver.role === 'driver' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}`}>
+                      {driver.role === 'driver' ? 'Driver' : 'Conductor'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`badge ${getStatusBadge(driver.status)}`}>
@@ -178,17 +194,21 @@ export default function DriversTable() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm">
-                      <div className={isLicenseExpiringSoon(driver.licenseExpiry) ? 'text-yellow-600 font-medium' : 'text-gray-900'}>
-                        {new Date(driver.licenseExpiry).toLocaleDateString()}
-                      </div>
-                      {isLicenseExpiringSoon(driver.licenseExpiry) && (
-                        <div className="flex items-center text-xs text-yellow-600 mt-1">
-                          <AlertCircle className="h-3 w-3 mr-1" />
-                          Expiring soon
+                    {driver.licenseExpiry ? (
+                      <div className="text-sm">
+                        <div className={isLicenseExpiringSoon(driver.licenseExpiry) ? 'text-yellow-600 font-medium' : 'text-gray-900'}>
+                          {new Date(driver.licenseExpiry).toLocaleDateString()}
                         </div>
-                      )}
-                    </div>
+                        {isLicenseExpiringSoon(driver.licenseExpiry) && (
+                          <div className="flex items-center text-xs text-yellow-600 mt-1">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Expiring soon
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">N/A</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {driver.busRoutes.length > 0 ? (
@@ -207,14 +227,20 @@ export default function DriversTable() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleEdit(driver)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEdit(driver)
+                        }}
                         className="text-primary-600 hover:text-primary-800 transition-colors"
                         title="Edit driver"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => setDeleteConfirm(driver.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeleteConfirm(driver.id)
+                        }}
                         className="text-red-600 hover:text-red-800 transition-colors"
                         title="Delete driver"
                       >

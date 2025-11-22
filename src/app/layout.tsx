@@ -6,8 +6,8 @@ import Navigation from '@/components/Navigation'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'School Transport Management System',
-  description: 'Manage your school bus fleet, expenses, and drivers efficiently',
+  title: 'ASM Public School - Transport Management',
+  description: 'ASM Public School Transportation System - Manage fleet, expenses, and drivers efficiently',
 }
 
 export default function RootLayout({

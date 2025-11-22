@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bus, User, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react'
 import AddBusModal from './AddBusModal'
 import EditBusModal from './EditBusModal'
@@ -20,6 +21,9 @@ interface BusData {
     driver: {
       name: string
     }
+    conductor: {
+      name: string
+    } | null
     route: {
       routeName: string
     }
@@ -27,6 +31,7 @@ interface BusData {
 }
 
 export default function FleetTable() {
+  const router = useRouter()
   const [buses, setBuses] = useState<BusData[]>([])
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -38,9 +43,10 @@ export default function FleetTable() {
     try {
       const response = await fetch('/api/fleet/buses')
       const data = await response.json()
-      setBuses(data)
+      setBuses(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching buses:', error)
+      setBuses([])
     } finally {
       setLoading(false)
     }
@@ -132,6 +138,9 @@ export default function FleetTable() {
                 Driver
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Conductor
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Alerts
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -141,7 +150,11 @@ export default function FleetTable() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {buses.map((bus) => (
-              <tr key={bus.id} className="hover:bg-gray-50">
+              <tr
+                key={bus.id}
+                onClick={() => router.push(`/fleet/${bus.id}`)}
+                className="hover:bg-gray-50 cursor-pointer"
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
@@ -179,6 +192,16 @@ export default function FleetTable() {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  {bus.busRoutes.length > 0 && bus.busRoutes[0].conductor ? (
+                    <div className="flex items-center text-sm text-gray-900">
+                      <User className="h-4 w-4 mr-2 text-gray-400" />
+                      {bus.busRoutes[0].conductor.name}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">No conductor</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   {bus._count.reminders > 0 ? (
                     <div className="flex items-center text-sm text-yellow-600">
                       <AlertCircle className="h-4 w-4 mr-1" />
@@ -191,14 +214,20 @@ export default function FleetTable() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleEdit(bus)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEdit(bus)
+                      }}
                       className="text-primary-600 hover:text-primary-800 transition-colors"
                       title="Edit bus"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setDeleteConfirm(bus.id)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDeleteConfirm(bus.id)
+                      }}
                       className="text-red-600 hover:text-red-800 transition-colors"
                       title="Delete bus"
                     >
