@@ -30,22 +30,25 @@ export async function checkDriverLicenseExpiries(daysThreshold: number = 30): Pr
     },
   })
 
-  return drivers.map((driver) => {
-    const daysRemaining = Math.ceil(
-      (driver.licenseExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    )
+  return drivers
+    .filter((driver) => driver.licenseExpiry !== null)
+    .map((driver) => {
+      const licenseExpiry = driver.licenseExpiry as Date
+      const daysRemaining = Math.ceil(
+        (licenseExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
 
-    return {
-      id: driver.id,
-      type: 'driver_license' as const,
-      severity: daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
-      message: `Driver ${driver.name}'s license expires in ${daysRemaining} days`,
-      dueDate: driver.licenseExpiry,
-      daysRemaining,
-      entityId: driver.id,
-      entityName: driver.name,
-    }
-  })
+      return {
+        id: driver.id,
+        type: 'driver_license' as const,
+        severity: daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
+        message: `Driver ${driver.name}'s license expires in ${daysRemaining} days`,
+        dueDate: licenseExpiry,
+        daysRemaining,
+        entityId: driver.id,
+        entityName: driver.name,
+      }
+    })
 }
 
 /**
