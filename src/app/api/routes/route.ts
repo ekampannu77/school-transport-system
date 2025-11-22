@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         routeName,
         startPoint,
         endPoint,
-        distance: parseFloat(distance),
+        totalDistanceKm: parseFloat(distance),
       },
     })
 
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest) {
         routeName,
         startPoint,
         endPoint,
-        distance: parseFloat(distance),
+        totalDistanceKm: parseFloat(distance),
       },
     })
 
