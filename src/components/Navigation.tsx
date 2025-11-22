@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Bus, DollarSign, AlertTriangle, Home } from 'lucide-react'
+import { Bus, DollarSign, AlertTriangle, Home, User, MapPin } from 'lucide-react'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -10,6 +10,8 @@ export default function Navigation() {
   const links = [
     { href: '/', label: 'Dashboard', icon: Home },
     { href: '/fleet', label: 'Fleet', icon: Bus },
+    { href: '/drivers', label: 'Drivers', icon: User },
+    { href: '/routes', label: 'Routes', icon: MapPin },
     { href: '/expenses', label: 'Expenses', icon: DollarSign },
     { href: '/alerts', label: 'Alerts', icon: AlertTriangle },
   ]

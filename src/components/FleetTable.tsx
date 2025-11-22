@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bus, User, AlertCircle } from 'lucide-react'
+import { Bus, User, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react'
+import AddBusModal from './AddBusModal'
+import EditBusModal from './EditBusModal'
 
 interface BusData {
   id: string
@@ -27,22 +29,53 @@ interface BusData {
 export default function FleetTable() {
   const [buses, setBuses] = useState<BusData[]>([])
   const [loading, setLoading] = useState(true)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedBus, setSelectedBus] = useState<BusData | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+
+  const fetchBuses = async () => {
+    try {
+      const response = await fetch('/api/fleet/buses')
+      const data = await response.json()
+      setBuses(data)
+    } catch (error) {
+      console.error('Error fetching buses:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    async function fetchBuses() {
-      try {
-        const response = await fetch('/api/fleet/buses')
-        const data = await response.json()
-        setBuses(data)
-      } catch (error) {
-        console.error('Error fetching buses:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchBuses()
   }, [])
+
+  const handleBusAdded = () => {
+    fetchBuses()
+  }
+
+  const handleEdit = (bus: BusData) => {
+    setSelectedBus(bus)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDelete = async (busId: string) => {
+    try {
+      const response = await fetch(`/api/fleet/buses?id=${busId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete bus')
+      }
+
+      fetchBuses()
+      setDeleteConfirm(null)
+    } catch (error) {
+      console.error('Error deleting bus:', error)
+      alert('Failed to delete bus. Please try again.')
+    }
+  }
 
   if (loading) {
     return (
@@ -66,9 +99,21 @@ export default function FleetTable() {
   }
 
   return (
-    <div className="card overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+    <div>
+      {/* Add New Bus Button */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="btn-primary flex items-center gap-2"
+        >
+          <Plus className="h-5 w-5" />
+          Add New Bus
+        </button>
+      </div>
+
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -88,6 +133,9 @@ export default function FleetTable() {
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Alerts
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
               </th>
             </tr>
           </thead>
@@ -140,17 +188,80 @@ export default function FleetTable() {
                     <span className="text-sm text-gray-400">None</span>
                   )}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEdit(bus)}
+                      className="text-primary-600 hover:text-primary-800 transition-colors"
+                      title="Edit bus"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(bus.id)}
+                      className="text-red-600 hover:text-red-800 transition-colors"
+                      title="Delete bus"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
+
+        {buses.length === 0 && (
+          <div className="text-center py-12">
+            <Bus className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No buses</h3>
+            <p className="mt-1 text-sm text-gray-500">Get started by adding a bus to your fleet.</p>
+          </div>
+        )}
       </div>
 
-      {buses.length === 0 && (
-        <div className="text-center py-12">
-          <Bus className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No buses</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by adding a bus to your fleet.</p>
+      {/* Add Bus Modal */}
+      <AddBusModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleBusAdded}
+      />
+
+      {/* Edit Bus Modal */}
+      <EditBusModal
+        isOpen={isEditModalOpen}
+        bus={selectedBus}
+        onClose={() => {
+          setIsEditModalOpen(false)
+          setSelectedBus(null)
+        }}
+        onSuccess={handleBusAdded}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="card max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Bus</h3>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this bus? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm)}
+                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
