@@ -43,12 +43,20 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, licenseNumber, phone, address, licenseExpiry, status } = body
+    const { name, role, licenseNumber, phone, address, licenseExpiry, status } = body
 
     // Validation
-    if (!name || !licenseNumber || !phone || !licenseExpiry) {
+    if (!name || !phone) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate license fields for drivers
+    if (role === 'driver' && (!licenseNumber || !licenseExpiry)) {
+      return NextResponse.json(
+        { error: 'License number and expiry are required for drivers' },
         { status: 400 }
       )
     }
@@ -65,10 +73,11 @@ export async function POST(request: NextRequest) {
     const driver = await prisma.driver.create({
       data: {
         name,
-        licenseNumber,
+        role: role || 'driver',
+        licenseNumber: licenseNumber || null,
         phone,
         address: address || null,
-        licenseExpiry: new Date(licenseExpiry),
+        licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
         status: status || DriverStatus.active,
       },
     })
@@ -95,11 +104,19 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, name, licenseNumber, phone, address, licenseExpiry, status } = body
+    const { id, name, role, licenseNumber, phone, address, licenseExpiry, status } = body
 
     if (!id) {
       return NextResponse.json(
         { error: 'Driver ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate license fields for drivers
+    if (role === 'driver' && (!licenseNumber || !licenseExpiry)) {
+      return NextResponse.json(
+        { error: 'License number and expiry are required for drivers' },
         { status: 400 }
       )
     }
@@ -109,10 +126,11 @@ export async function PUT(request: NextRequest) {
       where: { id },
       data: {
         name,
-        licenseNumber,
+        role,
+        licenseNumber: licenseNumber || null,
         phone,
         address: address || null,
-        licenseExpiry: new Date(licenseExpiry),
+        licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
         status,
       },
     })

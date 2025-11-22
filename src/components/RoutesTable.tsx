@@ -36,9 +36,10 @@ export default function RoutesTable() {
     try {
       const response = await fetch('/api/routes')
       const data = await response.json()
-      setRoutes(data)
+      setRoutes(Array.isArray(data) ? data : [])
     } catch (error) {
       console.error('Error fetching routes:', error)
+      setRoutes([])
     } finally {
       setLoading(false)
     }

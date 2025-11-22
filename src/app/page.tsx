@@ -5,9 +5,9 @@ export default function HomePage() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Welcome to ASM Public School</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Overview of your school transportation system
+          Transportation Management Dashboard - Monitor your fleet, drivers, routes, and expenses
         </p>
       </div>
 

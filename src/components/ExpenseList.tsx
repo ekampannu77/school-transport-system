@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DollarSign, Calendar } from 'lucide-react'
+import { DollarSign, Calendar, FileText, X } from 'lucide-react'
 
 interface Expense {
   id: string
@@ -10,6 +10,7 @@ interface Expense {
   date: string
   description: string | null
   odometerReading: number | null
+  receiptImageUrl: string | null
   bus: {
     registrationNumber: string
   }
@@ -18,15 +19,17 @@ interface Expense {
 export default function ExpenseList() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchExpenses() {
       try {
         const response = await fetch('/api/expenses/log')
         const data = await response.json()
-        setExpenses(data)
+        setExpenses(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('Error fetching expenses:', error)
+        setExpenses([])
       } finally {
         setLoading(false)
       }
@@ -89,6 +92,15 @@ export default function ExpenseList() {
                   {expense.odometerReading && (
                     <div>Odometer: {expense.odometerReading.toLocaleString()} km</div>
                   )}
+                  {expense.receiptImageUrl && (
+                    <button
+                      onClick={() => setSelectedReceipt(expense.receiptImageUrl)}
+                      className="flex items-center gap-1 text-primary-600 hover:text-primary-800 transition-colors"
+                    >
+                      <FileText className="h-3 w-3" />
+                      View Receipt
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="ml-4 flex items-center">
@@ -109,6 +121,27 @@ export default function ExpenseList() {
           <p className="mt-1 text-sm text-gray-500">
             Start by logging your first expense.
           </p>
+        </div>
+      )}
+
+      {/* Receipt Viewer Modal */}
+      {selectedReceipt && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl w-full">
+            <button
+              onClick={() => setSelectedReceipt(null)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="h-8 w-8" />
+            </button>
+            <div className="bg-white rounded-lg p-4">
+              <img
+                src={selectedReceipt}
+                alt="Receipt"
+                className="w-full h-auto max-h-[80vh] object-contain"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

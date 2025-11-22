@@ -22,6 +22,11 @@ enum DriverStatus {
   suspended
 }
 
+enum DriverRole {
+  driver
+  conductor
+}
+
 enum ExpenseCategory {
   Fuel
   Maintenance
@@ -51,6 +56,8 @@ model Bus {
   seatingCapacity     Int         @map("seating_capacity")
   purchaseDate        DateTime    @map("purchase_date")
   status              BusStatus   @default(active)
+  insuranceExpiry     DateTime?   @map("insurance_expiry")
+  insuranceReminder   DateTime?   @map("insurance_reminder")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
@@ -58,6 +65,7 @@ model Bus {
   expenses            Expense[]
   busRoutes           BusRoute[]
   reminders           Reminder[]
+  documents           BusDocument[]
 
   @@map("buses")
 }
@@ -65,15 +73,20 @@ model Bus {
 model Driver {
   id                  String        @id @default(cuid())
   name                String
-  licenseNumber       String        @unique @map("license_number")
-  licenseExpiry       DateTime      @map("license_expiry")
+  role                DriverRole    @default(driver)
+  licenseNumber       String?       @unique @map("license_number")
+  licenseExpiry       DateTime?     @map("license_expiry")
+  licenseReminder     DateTime?     @map("license_reminder")
   phone               String
+  address             String?
   status              DriverStatus  @default(active)
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
   // Relations
   busRoutes           BusRoute[]
+  busRoutesAsConductor BusRoute[]   @relation("conductor")
+  documents           DriverDocument[]
 
   @@map("drivers")
 }
@@ -118,6 +131,7 @@ model BusRoute {
   id                  String      @id @default(cuid())
   busId               String      @map("bus_id")
   driverId            String      @map("driver_id")
+  conductorId         String?     @map("conductor_id")
   routeId             String      @map("route_id")
   academicTerm        String      @map("academic_term")
   startDate           DateTime    @map("start_date")
@@ -128,11 +142,13 @@ model BusRoute {
   // Relations
   bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
   driver              Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  conductor           Driver?     @relation("conductor", fields: [conductorId], references: [id], onDelete: SetNull)
   route               Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
 
   @@unique([busId, routeId, academicTerm])
   @@index([busId])
   @@index([driverId])
+  @@index([conductorId])
   @@index([routeId])
   @@map("bus_routes")
 }
@@ -154,4 +170,44 @@ model Reminder {
   @@index([dueDate])
   @@index([status])
   @@map("reminders")
+}
+
+model BusDocument {
+  id                  String      @id @default(cuid())
+  busId               String      @map("bus_id")
+  documentType        String      @map("document_type")  // Insurance, Registration, Fitness, etc.
+  documentName        String      @map("document_name")
+  fileUrl             String      @map("file_url")       // Base64 or cloud storage URL
+  expiryDate          DateTime?   @map("expiry_date")
+  notes               String?
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([documentType])
+  @@index([expiryDate])
+  @@map("bus_documents")
+}
+
+model DriverDocument {
+  id                  String      @id @default(cuid())
+  driverId            String      @map("driver_id")
+  documentType        String      @map("document_type")  // License, Medical Certificate, ID, etc.
+  documentName        String      @map("document_name")
+  fileUrl             String      @map("file_url")       // Base64 or cloud storage URL
+  expiryDate          DateTime?   @map("expiry_date")
+  notes               String?
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  driver              Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([documentType])
+  @@index([expiryDate])
+  @@map("driver_documents")
 }

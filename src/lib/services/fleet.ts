@@ -128,6 +128,11 @@ export async function getAllBuses() {
               name: true,
             },
           },
+          conductor: {
+            select: {
+              name: true,
+            },
+          },
           route: {
             select: {
               routeName: true,
