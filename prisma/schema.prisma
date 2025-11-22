@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BusStatus {
+  active
+  maintenance
+  retired
+}
+
+enum DriverStatus {
+  active
+  inactive
+  suspended
+}
+
+enum ExpenseCategory {
+  Fuel
+  Maintenance
+  Salary
+  Insurance
+  Other
+}
+
+enum ReminderType {
+  Insurance_Renewal
+  Permit
+  Oil_Change
+  License_Renewal
+  Fitness_Certificate
+  Pollution_Certificate
+}
+
+enum ReminderStatus {
+  Pending
+  Resolved
+}
+
+model Bus {
+  id                  String      @id @default(cuid())
+  registrationNumber  String      @unique @map("registration_number")
+  chassisNumber       String      @unique @map("chassis_number")
+  seatingCapacity     Int         @map("seating_capacity")
+  purchaseDate        DateTime    @map("purchase_date")
+  status              BusStatus   @default(active)
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  expenses            Expense[]
+  busRoutes           BusRoute[]
+  reminders           Reminder[]
+
+  @@map("buses")
+}
+
+model Driver {
+  id                  String        @id @default(cuid())
+  name                String
+  licenseNumber       String        @unique @map("license_number")
+  licenseExpiry       DateTime      @map("license_expiry")
+  phone               String
+  status              DriverStatus  @default(active)
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  busRoutes           BusRoute[]
+
+  @@map("drivers")
+}
+
+model Expense {
+  id                  String            @id @default(cuid())
+  busId               String            @map("bus_id")
+  category            ExpenseCategory
+  amount              Float
+  date                DateTime
+  description         String?
+  odometerReading     Int?              @map("odometer_reading")
+  receiptImageUrl     String?           @map("receipt_image_url")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  bus                 Bus               @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([date])
+  @@index([category])
+  @@map("expenses")
+}
+
+model Route {
+  id                  String      @id @default(cuid())
+  routeName           String      @unique @map("route_name")
+  startPoint          String      @map("start_point")
+  endPoint            String      @map("end_point")
+  totalDistanceKm     Float       @map("total_distance_km")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  busRoutes           BusRoute[]
+
+  @@map("routes")
+}
+
+model BusRoute {
+  id                  String      @id @default(cuid())
+  busId               String      @map("bus_id")
+  driverId            String      @map("driver_id")
+  routeId             String      @map("route_id")
+  academicTerm        String      @map("academic_term")
+  startDate           DateTime    @map("start_date")
+  endDate             DateTime?   @map("end_date")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
+  driver              Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  route               Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@unique([busId, routeId, academicTerm])
+  @@index([busId])
+  @@index([driverId])
+  @@index([routeId])
+  @@map("bus_routes")
+}
+
+model Reminder {
+  id                  String          @id @default(cuid())
+  busId               String          @map("bus_id")
+  type                ReminderType
+  dueDate             DateTime        @map("due_date")
+  status              ReminderStatus  @default(Pending)
+  notes               String?
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  bus                 Bus             @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("reminders")
+}
