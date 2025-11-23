@@ -1,9 +1,9 @@
-import { SignJWT, jwtVerify } from 'jose'
+import { SignJWT, jwtVerify, JWTPayload as JoseJWTPayload } from 'jose'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
 const secret = new TextEncoder().encode(JWT_SECRET)
 
-export interface JWTPayload {
+export interface JWTPayload extends JoseJWTPayload {
   userId: string
   username: string
   role: string
