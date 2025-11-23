@@ -10,12 +10,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum BusStatus {
-  active
-  maintenance
-  retired
-}
-
 enum DriverStatus {
   active
   inactive
@@ -61,18 +55,21 @@ model Bus {
   chassisNumber       String      @unique @map("chassis_number")
   seatingCapacity     Int         @map("seating_capacity")
   purchaseDate        DateTime    @map("purchase_date")
-  status              BusStatus   @default(active)
+  primaryDriverId     String?     @map("primary_driver_id")
   insuranceExpiry     DateTime?   @map("insurance_expiry")
   insuranceReminder   DateTime?   @map("insurance_reminder")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
   // Relations
+  primaryDriver       Driver?     @relation("primaryDriver", fields: [primaryDriverId], references: [id], onDelete: SetNull)
   expenses            Expense[]
   busRoutes           BusRoute[]
   reminders           Reminder[]
   documents           BusDocument[]
+  students            Student[]
 
+  @@index([primaryDriverId])
   @@map("buses")
 }
 
@@ -90,6 +87,7 @@ model Driver {
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
   // Relations
+  primaryBuses        Bus[]         @relation("primaryDriver")
   busRoutes           BusRoute[]
   busRoutesAsConductor BusRoute[]   @relation("conductor")
   documents           DriverDocument[]
@@ -136,7 +134,7 @@ model Route {
 model BusRoute {
   id                  String      @id @default(cuid())
   busId               String      @map("bus_id")
-  driverId            String      @map("driver_id")
+  driverId            String?     @map("driver_id")
   conductorId         String?     @map("conductor_id")
   routeId             String      @map("route_id")
   academicTerm        String      @map("academic_term")
@@ -147,7 +145,7 @@ model BusRoute {
 
   // Relations
   bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
-  driver              Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
+  driver              Driver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
   conductor           Driver?     @relation("conductor", fields: [conductorId], references: [id], onDelete: SetNull)
   route               Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
 
@@ -231,4 +229,29 @@ model User {
   @@index([username])
   @@index([email])
   @@map("users")
+}
+
+model Student {
+  id                  String      @id @default(cuid())
+  name                String
+  class               String      // e.g., "Class 5-A", "Grade 10-B"
+  village             String      // Residential area/village
+  parentName          String      @map("parent_name")
+  parentContact       String      @map("parent_contact")   // Phone number
+  emergencyContact    String?     @map("emergency_contact") // Optional emergency number
+  busId               String      @map("bus_id")
+  startDate           DateTime    @default(now()) @map("start_date")  // When student started using bus
+  endDate             DateTime?   @map("end_date")         // When student stopped using bus (null = still active)
+  isActive            Boolean     @default(true) @map("is_active")
+  createdAt           DateTime    @default(now()) @map("created_at")
+  updatedAt           DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([class])
+  @@index([village])
+  @@index([isActive])
+  @@map("students")
 }

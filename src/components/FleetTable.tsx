@@ -11,8 +11,11 @@ interface BusData {
   registrationNumber: string
   chassisNumber: string
   seatingCapacity: number
-  status: 'active' | 'maintenance' | 'retired'
   purchaseDate: string
+  primaryDriver: {
+    id: string
+    name: string
+  } | null
   _count: {
     expenses: number
     reminders: number
@@ -95,15 +98,6 @@ export default function FleetTable() {
     )
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      active: 'badge-success',
-      maintenance: 'badge-warning',
-      retired: 'badge-info',
-    }
-    return statusConfig[status as keyof typeof statusConfig] || 'badge-info'
-  }
-
   return (
     <div>
       {/* Add New Bus Button */}
@@ -126,19 +120,10 @@ export default function FleetTable() {
                 Bus Details
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Status
+                Assigned Driver
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Capacity
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Assigned Route
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Driver
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Conductor
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Alerts
@@ -169,37 +154,17 @@ export default function FleetTable() {
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`badge ${getStatusBadge(bus.status)}`}>
-                    {bus.status}
-                  </span>
+                  {bus.primaryDriver ? (
+                    <div className="flex items-center text-sm text-gray-900">
+                      <User className="h-4 w-4 mr-2 text-gray-400" />
+                      {bus.primaryDriver.name}
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-400">Not assigned</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {bus.seatingCapacity} seats
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {bus.busRoutes.length > 0
-                    ? bus.busRoutes[0].route.routeName
-                    : 'Not assigned'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {bus.busRoutes.length > 0 ? (
-                    <div className="flex items-center text-sm text-gray-900">
-                      <User className="h-4 w-4 mr-2 text-gray-400" />
-                      {bus.busRoutes[0].driver.name}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">No driver</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {bus.busRoutes.length > 0 && bus.busRoutes[0].conductor ? (
-                    <div className="flex items-center text-sm text-gray-900">
-                      <User className="h-4 w-4 mr-2 text-gray-400" />
-                      {bus.busRoutes[0].conductor.name}
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-400">No conductor</span>
-                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {bus._count.reminders > 0 ? (

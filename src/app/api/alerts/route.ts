@@ -4,13 +4,11 @@ import { getAllCriticalAlerts } from '@/lib/services/alerts'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const daysThreshold = searchParams.get('days')
+    const days = parseInt(searchParams.get('days') || '30')
 
-    const threshold = daysThreshold ? parseInt(daysThreshold) : 30
+    const alertsData = await getAllCriticalAlerts(days)
 
-    const alerts = await getAllCriticalAlerts(threshold)
-
-    return NextResponse.json(alerts)
+    return NextResponse.json(alertsData)
   } catch (error) {
     console.error('Error fetching alerts:', error)
     return NextResponse.json(

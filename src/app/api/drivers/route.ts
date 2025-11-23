@@ -6,20 +6,6 @@ export async function GET() {
   try {
     const drivers = await prisma.driver.findMany({
       include: {
-        busRoutes: {
-          include: {
-            bus: {
-              select: {
-                registrationNumber: true,
-              },
-            },
-            route: {
-              select: {
-                routeName: true,
-              },
-            },
-          },
-        },
         _count: {
           select: {
             busRoutes: true,

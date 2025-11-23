@@ -9,9 +9,6 @@ import { ExpiryAlert } from '@/lib/services/alerts'
 interface FleetOverview {
   buses: {
     total: number
-    active: number
-    maintenance: number
-    retired: number
   }
   drivers: {
     total: number
@@ -87,9 +84,9 @@ export default function DashboardContent() {
         />
         <StatCard
           title="Buses on Road"
-          value={overview?.buses.active || 0}
+          value={overview?.buses.total || 0}
           icon={Bus}
-          subtitle={`${overview?.buses.maintenance || 0} in maintenance`}
+          subtitle="Fleet vehicles"
         />
         <StatCard
           title="Active Drivers"
@@ -102,6 +99,7 @@ export default function DashboardContent() {
           value={alerts?.criticalCount || 0}
           icon={AlertTriangle}
           subtitle={`${alerts?.warningCount || 0} warnings`}
+          href="/alerts"
         />
       </div>
 
@@ -133,22 +131,16 @@ export default function DashboardContent() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Fleet Status</h2>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Active Buses</span>
-              <span className="badge badge-success">{overview?.buses.active || 0}</span>
+              <span className="text-sm text-gray-600">Total Buses</span>
+              <span className="badge badge-success">{overview?.buses.total || 0}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Under Maintenance</span>
-              <span className="badge badge-warning">{overview?.buses.maintenance || 0}</span>
+              <span className="text-sm text-gray-600">Active Drivers</span>
+              <span className="badge badge-info">{overview?.drivers.active || 0}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Retired</span>
-              <span className="badge badge-info">{overview?.buses.retired || 0}</span>
-            </div>
-            <div className="pt-3 border-t border-gray-200">
-              <div className="flex justify-between items-center font-medium">
-                <span className="text-sm text-gray-900">Total Fleet</span>
-                <span className="text-sm text-gray-900">{overview?.buses.total || 0}</span>
-              </div>
+              <span className="text-sm text-gray-600">Total Routes</span>
+              <span className="badge badge-info">{overview?.routes.total || 0}</span>
             </div>
           </div>
         </div>

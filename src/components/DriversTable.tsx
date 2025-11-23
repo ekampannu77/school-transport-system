@@ -15,14 +15,6 @@ interface DriverData {
   address: string | null
   licenseExpiry: string | null
   status: 'active' | 'inactive'
-  busRoutes: Array<{
-    bus: {
-      registrationNumber: string
-    }
-    route: {
-      routeName: string
-    }
-  }>
   _count: {
     busRoutes: number
   }
@@ -142,9 +134,6 @@ export default function DriversTable() {
                   License Expiry
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Assigned Route
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -208,20 +197,6 @@ export default function DriversTable() {
                       </div>
                     ) : (
                       <span className="text-sm text-gray-400">N/A</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {driver.busRoutes.length > 0 ? (
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {driver.busRoutes[0].route.routeName}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {driver.busRoutes[0].bus.registrationNumber}
-                        </div>
-                      </div>
-                    ) : (
-                      'Not assigned'
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

@@ -1,4 +1,5 @@
 import { LucideIcon } from 'lucide-react'
+import Link from 'next/link'
 
 interface StatCardProps {
   title: string
@@ -9,11 +10,12 @@ interface StatCardProps {
     isPositive: boolean
   }
   subtitle?: string
+  href?: string
 }
 
-export default function StatCard({ title, value, icon: Icon, trend, subtitle }: StatCardProps) {
-  return (
-    <div className="card p-6">
+export default function StatCard({ title, value, icon: Icon, trend, subtitle, href }: StatCardProps) {
+  const content = (
+    <>
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600">{title}</p>
@@ -38,6 +40,16 @@ export default function StatCard({ title, value, icon: Icon, trend, subtitle }: 
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
+
+  if (href) {
+    return (
+      <Link href={href} className="card p-6 hover:shadow-lg transition-shadow cursor-pointer block">
+        {content}
+      </Link>
+    )
+  }
+
+  return <div className="card p-6">{content}</div>
 }
