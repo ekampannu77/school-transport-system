@@ -59,7 +59,6 @@ export async function calculateCostPerMile(busId: string): Promise<{
  */
 export async function getAllBusesCostPerMile() {
   const buses = await prisma.bus.findMany({
-    where: { status: 'active' },
     select: { id: true, registrationNumber: true },
   })
 
