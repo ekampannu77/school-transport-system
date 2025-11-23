@@ -35,8 +35,8 @@ export default function LoginPage() {
       }
 
       // Redirect to dashboard on successful login
-      router.push('/')
-      router.refresh()
+      // Use window.location to ensure cookie is sent with next request
+      window.location.href = '/'
     } catch (err) {
       setError('An error occurred. Please try again.')
     } finally {

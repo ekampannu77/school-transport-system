@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken } from './lib/auth'
+import { verifyTokenEdge } from './lib/auth-edge'
 
 const publicPaths = ['/login', '/setup', '/api/auth/login', '/api/auth/register', '/api/auth/check-setup']
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow public paths
@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Verify token
-  const user = verifyToken(token)
+  const user = await verifyTokenEdge(token)
   if (!user) {
     const loginUrl = new URL('/login', request.url)
     return NextResponse.redirect(loginUrl)
