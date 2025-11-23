@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyPassword, createToken, setAuthCookie } from '@/lib/auth'
+import { verifyPassword } from '@/lib/auth'
+import { createTokenEdge } from '@/lib/auth-edge'
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,17 +46,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create JWT token
-    const token = createToken({
+    const token = await createTokenEdge({
       userId: user.id,
       username: user.username,
       role: user.role,
     })
 
-    // Set cookie
-    await setAuthCookie(token)
-
-    // Return user info (without password)
-    return NextResponse.json({
+    // Create response with user info
+    const response = NextResponse.json({
       user: {
         id: user.id,
         username: user.username,
@@ -63,6 +61,17 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
     })
+
+    // Set cookie on response
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    })
+
+    return response
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(

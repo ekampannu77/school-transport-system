@@ -73,7 +73,7 @@ export default function SetupPage() {
 
       setSuccess(true)
       setTimeout(() => {
-        router.push('/login')
+        window.location.href = '/login'
       }, 2000)
     } catch (err) {
       setError('An error occurred. Please try again.')
