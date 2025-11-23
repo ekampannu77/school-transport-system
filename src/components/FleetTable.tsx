@@ -123,6 +123,9 @@ export default function FleetTable() {
                 Assigned Driver
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Route
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Capacity
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -161,6 +164,17 @@ export default function FleetTable() {
                     </div>
                   ) : (
                     <span className="text-sm text-gray-400">Not assigned</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {bus.busRoutes && bus.busRoutes.length > 0 ? (
+                    bus.busRoutes.length === 1 ? (
+                      bus.busRoutes[0].route.routeName
+                    ) : (
+                      <span className="text-gray-700">{bus.busRoutes.length} routes</span>
+                    )
+                  ) : (
+                    <span className="text-gray-400">Not assigned</span>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
