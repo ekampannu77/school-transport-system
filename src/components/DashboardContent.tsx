@@ -89,10 +89,10 @@ export default function DashboardContent() {
           subtitle="Fleet vehicles"
         />
         <StatCard
-          title="Active Drivers"
+          title="Active Drivers/Conductors"
           value={overview?.drivers.active || 0}
           icon={Users}
-          subtitle={`${overview?.drivers.total || 0} total drivers`}
+          subtitle={`${overview?.drivers.total || 0} total drivers/conductors`}
         />
         <StatCard
           title="Critical Alerts"
@@ -135,7 +135,7 @@ export default function DashboardContent() {
               <span className="badge badge-success">{overview?.buses.total || 0}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Active Drivers</span>
+              <span className="text-sm text-gray-600">Active Drivers/Conductors</span>
               <span className="badge badge-info">{overview?.drivers.active || 0}</span>
             </div>
             <div className="flex justify-between items-center">
