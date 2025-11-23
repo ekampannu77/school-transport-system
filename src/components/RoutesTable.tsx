@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { MapPin, Plus, Edit, Trash2, Navigation, Bus, User } from 'lucide-react'
+import { MapPin, Plus, Edit, Trash2, Navigation, Bus, User, Link2 } from 'lucide-react'
 import AddRouteModal from './AddRouteModal'
 import EditRouteModal from './EditRouteModal'
+import AssignBusToRouteModal from './AssignBusToRouteModal'
 
 interface RouteData {
   id: string
@@ -14,9 +15,9 @@ interface RouteData {
   busRoutes: Array<{
     bus: {
       registrationNumber: string
-    }
-    driver: {
-      name: string
+      primaryDriver: {
+        name: string
+      } | null
     }
   }>
   _count: {
@@ -29,6 +30,7 @@ export default function RoutesTable() {
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAssignBusModalOpen, setIsAssignBusModalOpen] = useState(false)
   const [selectedRoute, setSelectedRoute] = useState<RouteData | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
@@ -56,6 +58,11 @@ export default function RoutesTable() {
   const handleEdit = (route: RouteData) => {
     setSelectedRoute(route)
     setIsEditModalOpen(true)
+  }
+
+  const handleAssignBus = (route: RouteData) => {
+    setSelectedRoute(route)
+    setIsAssignBusModalOpen(true)
   }
 
   const handleDelete = async (routeId: string) => {
@@ -161,10 +168,12 @@ export default function RoutesTable() {
                           <Bus className="h-4 w-4 mr-2 text-gray-400" />
                           {route.busRoutes[0].bus.registrationNumber}
                         </div>
-                        <div className="flex items-center text-gray-500 text-xs">
-                          <User className="h-3 w-3 mr-2 text-gray-400" />
-                          {route.busRoutes[0].driver.name}
-                        </div>
+                        {route.busRoutes[0].bus.primaryDriver && (
+                          <div className="flex items-center text-gray-500 text-xs">
+                            <User className="h-3 w-3 mr-2 text-gray-400" />
+                            {route.busRoutes[0].bus.primaryDriver.name}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <span className="text-sm text-gray-400">Not assigned</span>
@@ -172,6 +181,13 @@ export default function RoutesTable() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAssignBus(route)}
+                        className="text-green-600 hover:text-green-800 transition-colors"
+                        title="Assign bus to route"
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => handleEdit(route)}
                         className="text-primary-600 hover:text-primary-800 transition-colors"
@@ -216,6 +232,17 @@ export default function RoutesTable() {
         route={selectedRoute}
         onClose={() => {
           setIsEditModalOpen(false)
+          setSelectedRoute(null)
+        }}
+        onSuccess={handleRouteAdded}
+      />
+
+      {/* Assign Bus Modal */}
+      <AssignBusToRouteModal
+        isOpen={isAssignBusModalOpen}
+        route={selectedRoute}
+        onClose={() => {
+          setIsAssignBusModalOpen(false)
           setSelectedRoute(null)
         }}
         onSuccess={handleRouteAdded}

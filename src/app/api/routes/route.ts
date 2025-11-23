@@ -10,11 +10,11 @@ export async function GET() {
             bus: {
               select: {
                 registrationNumber: true,
-              },
-            },
-            driver: {
-              select: {
-                name: true,
+                primaryDriver: {
+                  select: {
+                    name: true,
+                  },
+                },
               },
             },
           },

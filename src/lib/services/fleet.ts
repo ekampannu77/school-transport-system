@@ -1,16 +1,12 @@
 import { prisma } from '@/lib/prisma'
-import { BusStatus } from '@prisma/client'
 
 /**
  * Get fleet overview statistics
  */
 export async function getFleetOverview() {
-  const [totalBuses, activeBuses, maintenanceBuses, retiredBuses, totalDrivers, activeDrivers] =
+  const [totalBuses, totalDrivers, activeDrivers] =
     await Promise.all([
       prisma.bus.count(),
-      prisma.bus.count({ where: { status: BusStatus.active } }),
-      prisma.bus.count({ where: { status: BusStatus.maintenance } }),
-      prisma.bus.count({ where: { status: BusStatus.retired } }),
       prisma.driver.count(),
       prisma.driver.count({ where: { status: 'active' } }),
     ])
@@ -38,9 +34,6 @@ export async function getFleetOverview() {
   return {
     buses: {
       total: totalBuses,
-      active: activeBuses,
-      maintenance: maintenanceBuses,
-      retired: retiredBuses,
     },
     drivers: {
       total: totalDrivers,
@@ -62,6 +55,14 @@ export async function getBusDetails(busId: string) {
   const bus = await prisma.bus.findUnique({
     where: { id: busId },
     include: {
+      primaryDriver: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          licenseNumber: true,
+        },
+      },
       expenses: {
         orderBy: { date: 'desc' },
         take: 10,
@@ -108,6 +109,12 @@ export async function getBusDetails(busId: string) {
 export async function getAllBuses() {
   const buses = await prisma.bus.findMany({
     include: {
+      primaryDriver: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
       _count: {
         select: {
           expenses: true,

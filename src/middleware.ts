@@ -1,33 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyTokenEdge } from './lib/auth-edge'
-
-const publicPaths = ['/login', '/setup', '/api/auth/login', '/api/auth/register', '/api/auth/check-setup']
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
-
-  // Allow public paths
-  if (publicPaths.some(path => pathname.startsWith(path))) {
-    return NextResponse.next()
-  }
-
-  // Get token from cookies
-  const token = request.cookies.get('auth_token')?.value
-
-  // If no token, redirect to login
-  if (!token) {
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
-  // Verify token
-  const user = await verifyTokenEdge(token)
-  if (!user) {
-    const loginUrl = new URL('/login', request.url)
-    return NextResponse.redirect(loginUrl)
-  }
-
+  // Authentication disabled - allow all requests
   return NextResponse.next()
 }
 

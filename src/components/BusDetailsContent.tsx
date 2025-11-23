@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload } from 'lucide-react'
+import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users } from 'lucide-react'
 import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
 import InsuranceTracker from './InsuranceTracker'
+import BusStudentsList from './BusStudentsList'
 
 interface BusData {
   id: string
@@ -12,7 +13,12 @@ interface BusData {
   chassisNumber: string
   seatingCapacity: number
   purchaseDate: string
-  status: string
+  primaryDriver: {
+    id: string
+    name: string
+    phone: string
+    licenseNumber: string | null
+  } | null
   insuranceExpiry: string | null
   insuranceReminder: string | null
   _count: {
@@ -36,7 +42,7 @@ interface BusData {
 export default function BusDetailsContent({ busId }: { busId: string }) {
   const [bus, setBus] = useState<BusData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'insurance'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'documents' | 'insurance'>('overview')
 
   useEffect(() => {
     fetchBusDetails()
@@ -82,15 +88,6 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
     )
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, string> = {
-      active: 'badge-success',
-      maintenance: 'badge-warning',
-      retired: 'badge-info',
-    }
-    return statusConfig[status] || 'badge-info'
-  }
-
   return (
     <div className="space-y-6">
       {/* Bus Overview Card */}
@@ -105,9 +102,12 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
               <p className="text-sm text-gray-500">Chassis: {bus.chassisNumber}</p>
             </div>
           </div>
-          <span className={`badge ${getStatusBadge(bus.status)}`}>
-            {bus.status}
-          </span>
+          {bus.primaryDriver && (
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Primary Driver</p>
+              <p className="font-medium text-gray-900">{bus.primaryDriver.name}</p>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -135,12 +135,14 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Assigned Staff</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center">
-                <div className="text-sm">
-                  <p className="text-gray-500">Driver</p>
-                  <p className="font-medium text-gray-900">{bus.busRoutes[0].driver.name}</p>
+              {bus.busRoutes[0].driver && (
+                <div className="flex items-center">
+                  <div className="text-sm">
+                    <p className="text-gray-500">Driver</p>
+                    <p className="font-medium text-gray-900">{bus.busRoutes[0].driver.name}</p>
+                  </div>
                 </div>
-              </div>
+              )}
               {bus.busRoutes[0].conductor && (
                 <div className="flex items-center">
                   <div className="text-sm">
@@ -194,6 +196,16 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
             Overview
           </button>
           <button
+            onClick={() => setActiveTab('students')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'students'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Students
+          </button>
+          <button
             onClick={() => setActiveTab('documents')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'documents'
@@ -224,6 +236,10 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
             Detailed statistics and expense history will be displayed here.
           </p>
         </div>
+      )}
+
+      {activeTab === 'students' && (
+        <BusStudentsList busId={busId} seatingCapacity={bus.seatingCapacity} />
       )}
 
       {activeTab === 'documents' && (

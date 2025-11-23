@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 
 interface AddBusModalProps {
@@ -9,16 +9,38 @@ interface AddBusModalProps {
   onSuccess: () => void
 }
 
+interface Driver {
+  id: string
+  name: string
+}
+
 export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [drivers, setDrivers] = useState<Driver[]>([])
   const [formData, setFormData] = useState({
     registrationNumber: '',
     chassisNumber: '',
     seatingCapacity: '',
     purchaseDate: new Date().toISOString().split('T')[0],
-    status: 'active',
+    primaryDriverId: '',
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchDrivers()
+    }
+  }, [isOpen])
+
+  const fetchDrivers = async () => {
+    try {
+      const response = await fetch('/api/drivers')
+      const data = await response.json()
+      setDrivers(Array.isArray(data) ? data.filter((d: any) => d.role === 'driver') : [])
+    } catch (error) {
+      console.error('Error fetching drivers:', error)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +68,7 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
         chassisNumber: '',
         seatingCapacity: '',
         purchaseDate: new Date().toISOString().split('T')[0],
-        status: 'active',
+        primaryDriverId: '',
       })
 
       onSuccess()
@@ -149,16 +171,19 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
+              Assign Driver (Optional)
             </label>
             <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              value={formData.primaryDriverId}
+              onChange={(e) => setFormData({ ...formData, primaryDriverId: e.target.value })}
               className="input-field"
             >
-              <option value="active">Active</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="retired">Retired</option>
+              <option value="">No driver assigned</option>
+              {drivers.map((driver) => (
+                <option key={driver.id} value={driver.id}>
+                  {driver.name}
+                </option>
+              ))}
             </select>
           </div>
 

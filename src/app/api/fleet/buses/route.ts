@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllBuses } from '@/lib/services/fleet'
 import { prisma } from '@/lib/prisma'
-import { BusStatus } from '@prisma/client'
 
 export async function GET() {
   try {
@@ -19,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { registrationNumber, chassisNumber, seatingCapacity, purchaseDate, status } = body
+    const { registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId } = body
 
     // Validation
     if (!registrationNumber || !chassisNumber || !seatingCapacity || !purchaseDate) {
@@ -29,12 +28,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validate status
-    if (status && !Object.values(BusStatus).includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid bus status' },
-        { status: 400 }
-      )
+    // Check if driver is already assigned to another bus
+    if (primaryDriverId) {
+      const existingAssignment = await prisma.bus.findFirst({
+        where: {
+          primaryDriverId: primaryDriverId,
+        },
+        select: {
+          registrationNumber: true,
+        },
+      })
+
+      if (existingAssignment) {
+        return NextResponse.json(
+          { error: `This driver is already assigned to bus ${existingAssignment.registrationNumber}` },
+          { status: 409 }
+        )
+      }
     }
 
     // Create new bus
@@ -44,7 +54,7 @@ export async function POST(request: NextRequest) {
         chassisNumber,
         seatingCapacity: parseInt(seatingCapacity),
         purchaseDate: new Date(purchaseDate),
-        status: status || BusStatus.active,
+        primaryDriverId: primaryDriverId || null,
       },
     })
 
@@ -70,13 +80,35 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, registrationNumber, chassisNumber, seatingCapacity, purchaseDate, status } = body
+    const { id, registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId } = body
 
     if (!id) {
       return NextResponse.json(
         { error: 'Bus ID is required' },
         { status: 400 }
       )
+    }
+
+    // Check if driver is already assigned to another bus
+    if (primaryDriverId) {
+      const existingAssignment = await prisma.bus.findFirst({
+        where: {
+          primaryDriverId: primaryDriverId,
+          NOT: {
+            id: id, // Exclude the current bus being updated
+          },
+        },
+        select: {
+          registrationNumber: true,
+        },
+      })
+
+      if (existingAssignment) {
+        return NextResponse.json(
+          { error: `This driver is already assigned to bus ${existingAssignment.registrationNumber}` },
+          { status: 409 }
+        )
+      }
     }
 
     // Update bus
@@ -87,7 +119,7 @@ export async function PUT(request: NextRequest) {
         chassisNumber,
         seatingCapacity: parseInt(seatingCapacity),
         purchaseDate: new Date(purchaseDate),
-        status,
+        primaryDriverId: primaryDriverId || null,
       },
     })
 
