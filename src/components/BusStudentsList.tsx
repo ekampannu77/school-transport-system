@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, Plus, Trash2, MapPin, Phone } from 'lucide-react'
+import { Users, Plus, Trash2, MapPin, Phone, Edit } from 'lucide-react'
 import AddStudentModal from './AddStudentModal'
+import EditStudentModal from './EditStudentModal'
 
 interface Student {
   id: string
@@ -27,6 +28,8 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
   const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
 
@@ -52,6 +55,11 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEdit = (student: Student) => {
+    setEditingStudent(student)
+    setShowEditModal(true)
   }
 
   const handleMarkInactive = async (studentId: string, studentName: string) => {
@@ -132,6 +140,35 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     }
   }
 
+  const handlePromoteAll = async () => {
+    const currentMonth = new Date().getMonth() + 1 // 1-12
+    const confirmMessage = currentMonth >= 4
+      ? 'Promote all active students to the next class? This will increment each student\'s class by 1.'
+      : 'Warning: It is recommended to promote students after April. Continue anyway?'
+
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/students/promote', {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert(data.message)
+        fetchStudents()
+      } else {
+        alert(data.error || 'Failed to promote students')
+      }
+    } catch (error) {
+      console.error('Error promoting students:', error)
+      alert('Failed to promote students')
+    }
+  }
+
   const activeStudents = students.filter(s => s.isActive)
   const inactiveStudents = students.filter(s => !s.isActive)
   const displayStudents = showInactive ? students : activeStudents
@@ -180,6 +217,15 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                 className="btn-secondary text-sm"
               >
                 {showInactive ? 'Hide Inactive' : 'Show Inactive'}
+              </button>
+            )}
+            {activeStudents.length > 0 && (
+              <button
+                onClick={handlePromoteAll}
+                className="btn-secondary text-sm"
+                title="Promote all students to next class"
+              >
+                Promote All
               </button>
             )}
             <button
@@ -286,6 +332,13 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => handleEdit(student)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="Edit student"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
                           {student.isActive ? (
                             <button
                               onClick={() => handleMarkInactive(student.id, student.name)}
@@ -328,6 +381,13 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
         busId={busId}
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
+        onSuccess={fetchStudents}
+      />
+
+      <EditStudentModal
+        student={editingStudent}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
         onSuccess={fetchStudents}
       />
     </>
