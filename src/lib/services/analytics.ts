@@ -2,6 +2,58 @@ import { prisma } from '@/lib/prisma'
 import { ExpenseCategory } from '@prisma/client'
 
 /**
+ * Calculate Fuel Efficiency (Mileage) for a specific bus
+ * Formula: Total Distance Traveled / Total Litres Filled
+ * Returns: km/L (kilometers per liter)
+ */
+export async function calculateFuelEfficiency(busId: string): Promise<{
+  kmPerLitre: number
+  totalDistance: number
+  totalLitres: number
+  fuelRecordsCount: number
+}> {
+  // Get all fuel expenses with both odometer readings and litres filled
+  const fuelExpenses = await prisma.expense.findMany({
+    where: {
+      busId,
+      category: ExpenseCategory.Fuel,
+      odometerReading: { not: null },
+      litresFilled: { not: null },
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  if (fuelExpenses.length < 2) {
+    return {
+      kmPerLitre: 0,
+      totalDistance: 0,
+      totalLitres: 0,
+      fuelRecordsCount: fuelExpenses.length,
+    }
+  }
+
+  // Calculate total distance (last odometer - first odometer)
+  const firstReading = fuelExpenses[0].odometerReading!
+  const lastReading = fuelExpenses[fuelExpenses.length - 1].odometerReading!
+  const totalDistance = lastReading - firstReading
+
+  // Calculate total litres filled
+  const totalLitres = fuelExpenses.reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
+
+  // Calculate km per litre
+  const kmPerLitre = totalDistance > 0 && totalLitres > 0 ? totalDistance / totalLitres : 0
+
+  return {
+    kmPerLitre: parseFloat(kmPerLitre.toFixed(2)),
+    totalDistance,
+    totalLitres: parseFloat(totalLitres.toFixed(2)),
+    fuelRecordsCount: fuelExpenses.length,
+  }
+}
+
+/**
  * Calculate Cost Per Mile (Cost Per Kilometer) for a specific bus
  * Formula: Total Fuel Cost / Total Distance Traveled (based on odometer readings)
  */
