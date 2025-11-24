@@ -107,6 +107,64 @@ export async function calculateCostPerMile(busId: string): Promise<{
 }
 
 /**
+ * Calculate Fuel Efficiency for a specific date range
+ */
+export async function calculateFuelEfficiencyForPeriod(
+  busId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{
+  kmPerLitre: number
+  totalDistance: number
+  totalLitres: number
+  fuelRecordsCount: number
+}> {
+  // Get fuel expenses within date range with both odometer readings and litres filled
+  const fuelExpenses = await prisma.expense.findMany({
+    where: {
+      busId,
+      category: ExpenseCategory.Fuel,
+      odometerReading: { not: null },
+      litresFilled: { not: null },
+      date: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  if (fuelExpenses.length < 2) {
+    return {
+      kmPerLitre: 0,
+      totalDistance: 0,
+      totalLitres: 0,
+      fuelRecordsCount: fuelExpenses.length,
+    }
+  }
+
+  // Calculate total distance (last odometer - first odometer)
+  const firstReading = fuelExpenses[0].odometerReading!
+  const lastReading = fuelExpenses[fuelExpenses.length - 1].odometerReading!
+  const totalDistance = lastReading - firstReading
+
+  // Calculate total litres filled
+  const totalLitres = fuelExpenses.reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
+
+  // Calculate km per litre
+  const kmPerLitre = totalDistance > 0 && totalLitres > 0 ? totalDistance / totalLitres : 0
+
+  return {
+    kmPerLitre: parseFloat(kmPerLitre.toFixed(2)),
+    totalDistance,
+    totalLitres: parseFloat(totalLitres.toFixed(2)),
+    fuelRecordsCount: fuelExpenses.length,
+  }
+}
+
+/**
  * Get cost per mile for all active buses
  */
 export async function getAllBusesCostPerMile() {
