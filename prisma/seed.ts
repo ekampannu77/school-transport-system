@@ -6,9 +6,12 @@ async function main() {
   console.log('🌱 Starting database seed...')
 
   // Clear existing data
+  await prisma.student.deleteMany()
   await prisma.expense.deleteMany()
   await prisma.busRoute.deleteMany()
   await prisma.reminder.deleteMany()
+  await prisma.busDocument.deleteMany()
+  await prisma.driverDocument.deleteMany()
   await prisma.bus.deleteMany()
   await prisma.driver.deleteMany()
   await prisma.route.deleteMany()
@@ -314,6 +317,132 @@ async function main() {
 
   console.log(`✅ Created ${expenses.length} expense records`)
 
+  // Create Students
+  const studentData = [
+    { name: 'Arjun Sharma', class: '5', village: 'Model Town', parent: 'Vikram Sharma', phone: '+91-9876501001', busId: buses[0].id, fee: 2000 },
+    { name: 'Priya Singh', class: '7', village: 'Laxmi Nagar', parent: 'Jaswinder Singh', phone: '+91-9876501002', busId: buses[0].id, fee: 1800 },
+    { name: 'Ravi Kumar', class: '10', village: 'Rohini', parent: 'Sunil Kumar', phone: '+91-9876501003', busId: buses[0].id, fee: 2200 },
+    { name: 'Simran Kaur', class: '8', village: 'Model Town', parent: 'Gurpreet Kaur', phone: '+91-9876501004', busId: buses[0].id, fee: 1900 },
+    { name: 'Aditya Verma', class: '6', village: 'Pitampura', parent: 'Rajesh Verma', phone: '+91-9876501005', busId: buses[0].id, fee: 1750 },
+    { name: 'Neha Patel', class: '9', village: 'Model Town', parent: 'Ramesh Patel', phone: '+91-9876501006', busId: buses[0].id, fee: 2100 },
+    { name: 'Karan Kapoor', class: '11', village: 'Rohini', parent: 'Anil Kapoor', phone: '+91-9876501007', busId: buses[0].id, fee: 2300 },
+    { name: 'Ananya Reddy', class: '5', village: 'Model Town', parent: 'Krishna Reddy', phone: '+91-9876501008', busId: buses[0].id, fee: 2000 },
+
+    { name: 'Rohit Gupta', class: '7', village: 'Greater Kailash', parent: 'Ashok Gupta', phone: '+91-9876501009', busId: buses[1].id, fee: 2500 },
+    { name: 'Meera Joshi', class: '10', village: 'Saket', parent: 'Suresh Joshi', phone: '+91-9876501010', busId: buses[1].id, fee: 2600 },
+    { name: 'Varun Malhotra', class: '6', village: 'GK II', parent: 'Sandeep Malhotra', phone: '+91-9876501011', busId: buses[1].id, fee: 2400 },
+    { name: 'Ishita Bhatia', class: '8', village: 'Greater Kailash', parent: 'Rajiv Bhatia', phone: '+91-9876501012', busId: buses[1].id, fee: 2450 },
+    { name: 'Siddharth Gill', class: '9', village: 'Defence Colony', parent: 'Manpreet Gill', phone: '+91-9876501013', busId: buses[1].id, fee: 2550 },
+    { name: 'Divya Chopra', class: '12', village: 'Saket', parent: 'Ravi Chopra', phone: '+91-9876501014', busId: buses[1].id, fee: 2700 },
+    { name: 'Harsh Sethi', class: '5', village: 'GK I', parent: 'Amit Sethi', phone: '+91-9876501015', busId: buses[1].id, fee: 2400 },
+
+    { name: 'Tanvi Agarwal', class: '7', village: 'Laxmi Nagar', parent: 'Deepak Agarwal', phone: '+91-9876501016', busId: buses[2].id, fee: 1650 },
+    { name: 'Arnav Bedi', class: '10', village: 'Preet Vihar', parent: 'Harinder Bedi', phone: '+91-9876501017', busId: buses[2].id, fee: 1800 },
+    { name: 'Kavya Dhillon', class: '6', village: 'Mayur Vihar', parent: 'Navdeep Dhillon', phone: '+91-9876501018', busId: buses[2].id, fee: 1700 },
+    { name: 'Yash Bhalla', class: '8', village: 'Laxmi Nagar', parent: 'Sanjay Bhalla', phone: '+91-9876501019', busId: buses[2].id, fee: 1750 },
+    { name: 'Isha Thakur', class: '11', village: 'Patparganj', parent: 'Rakesh Thakur', phone: '+91-9876501020', busId: buses[2].id, fee: 1900 },
+  ]
+
+  const students = []
+  for (const data of studentData) {
+    const feePaid = Math.floor(Math.random() * data.fee) // Random amount paid
+    const student = await prisma.student.create({
+      data: {
+        name: data.name,
+        class: data.class,
+        village: data.village,
+        parentName: data.parent,
+        parentContact: data.phone,
+        emergencyContact: data.phone.replace(/\d{4}$/, '9999'),
+        monthlyFee: data.fee,
+        feePaid: feePaid,
+        busId: data.busId,
+        startDate: new Date('2024-04-01'),
+        isActive: true,
+      },
+    })
+    students.push(student)
+  }
+
+  // Add 2 inactive students
+  const inactiveStudent1 = await prisma.student.create({
+    data: {
+      name: 'Rahul Mehta',
+      class: '9',
+      village: 'Model Town',
+      parentName: 'Mohan Mehta',
+      parentContact: '+91-9876501021',
+      monthlyFee: 2000,
+      feePaid: 2000,
+      busId: buses[0].id,
+      startDate: new Date('2024-04-01'),
+      endDate: new Date('2024-10-15'),
+      isActive: false,
+    },
+  })
+
+  const inactiveStudent2 = await prisma.student.create({
+    data: {
+      name: 'Anjali Verma',
+      class: '7',
+      village: 'Greater Kailash',
+      parentName: 'Suresh Verma',
+      parentContact: '+91-9876501022',
+      monthlyFee: 2400,
+      feePaid: 2400,
+      busId: buses[1].id,
+      startDate: new Date('2024-04-01'),
+      endDate: new Date('2024-09-30'),
+      isActive: false,
+    },
+  })
+
+  students.push(inactiveStudent1, inactiveStudent2)
+
+  console.log(`✅ Created ${students.length} students (${students.filter(s => s.isActive).length} active, ${students.filter(s => !s.isActive).length} inactive)`)
+
+  // Create Reminders
+  const reminders = await Promise.all([
+    prisma.reminder.create({
+      data: {
+        busId: buses[0].id,
+        type: 'Insurance_Renewal',
+        dueDate: new Date(today.getFullYear() + 1, 0, 15),
+        status: 'Pending',
+        notes: 'Insurance renewal for DL-01-AB-1234',
+      },
+    }),
+    prisma.reminder.create({
+      data: {
+        busId: buses[1].id,
+        type: 'Fitness_Certificate',
+        dueDate: new Date(today.getFullYear(), today.getMonth() + 2, 20),
+        status: 'Pending',
+        notes: 'Fitness certificate renewal required',
+      },
+    }),
+    prisma.reminder.create({
+      data: {
+        busId: buses[2].id,
+        type: 'Oil_Change',
+        dueDate: new Date(today.getFullYear(), today.getMonth() + 1, 10),
+        status: 'Pending',
+        notes: 'Oil change due at 53,000 km',
+      },
+    }),
+    prisma.reminder.create({
+      data: {
+        busId: buses[0].id,
+        type: 'Pollution_Certificate',
+        dueDate: new Date(today.getFullYear(), today.getMonth() + 1, 25),
+        status: 'Pending',
+        notes: 'PUC renewal required',
+      },
+    }),
+  ])
+
+  console.log(`✅ Created ${reminders.length} reminders`)
+
   console.log('✅ Database seed completed successfully!')
   console.log(`
 📊 Summary:
@@ -322,9 +451,18 @@ async function main() {
 - ${buses.length} buses
 - ${routes.length} routes
 - ${busRoutes.length} bus-route assignments
+- ${students.length} students (${students.filter(s => s.isActive).length} active, ${students.filter(s => !s.isActive).length} inactive)
 - ${expenses.length} expenses
+- ${reminders.length} reminders
 
-You can now test the export function with data from ${today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+You can now test all features including:
+- Fleet management with buses and drivers
+- Student management with fee tracking
+- Export functionality (both Bus Data and Student Data)
+- Expense tracking and reports
+- Alerts and reminders
+
+Data is set for ${today.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
   `)
 }
 
