@@ -20,6 +20,8 @@ export default function ExpenseForm() {
     description: '',
     odometerReading: '',
     receiptImageUrl: '',
+    pricePerLitre: '',
+    litresFilled: '',
   })
 
   useEffect(() => {
@@ -34,6 +36,18 @@ export default function ExpenseForm() {
     }
     fetchBuses()
   }, [])
+
+  // Auto-calculate amount for fuel expenses
+  useEffect(() => {
+    if (formData.category === 'Fuel' && formData.pricePerLitre && formData.litresFilled) {
+      const price = parseFloat(formData.pricePerLitre)
+      const litres = parseFloat(formData.litresFilled)
+      if (!isNaN(price) && !isNaN(litres)) {
+        const total = (price * litres).toFixed(2)
+        setFormData(prev => ({ ...prev, amount: total }))
+      }
+    }
+  }, [formData.pricePerLitre, formData.litresFilled, formData.category])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,6 +66,12 @@ export default function ExpenseForm() {
           odometerReading: formData.odometerReading
             ? parseInt(formData.odometerReading)
             : null,
+          pricePerLitre: formData.pricePerLitre && formData.category === 'Fuel'
+            ? parseFloat(formData.pricePerLitre)
+            : null,
+          litresFilled: formData.litresFilled && formData.category === 'Fuel'
+            ? parseFloat(formData.litresFilled)
+            : null,
         }),
       })
 
@@ -66,6 +86,8 @@ export default function ExpenseForm() {
           description: '',
           odometerReading: '',
           receiptImageUrl: '',
+          pricePerLitre: '',
+          litresFilled: '',
         })
         // Reload the page to show new expense
         window.location.reload()
@@ -137,18 +159,84 @@ export default function ExpenseForm() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
-          <input
-            type="number"
-            step="0.01"
-            value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-            className="input-field"
-            placeholder="0.00"
-            required
-          />
-        </div>
+        {formData.category === 'Fuel' ? (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price per Litre (₹)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.pricePerLitre}
+                  onChange={(e) => setFormData({ ...formData, pricePerLitre: e.target.value })}
+                  className="input-field"
+                  placeholder="e.g., 105.50"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Litres Filled
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.litresFilled}
+                  onChange={(e) => setFormData({ ...formData, litresFilled: e.target.value })}
+                  className="input-field"
+                  placeholder="e.g., 50"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Amount (₹)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                className="input-field bg-gray-50"
+                placeholder="Auto-calculated"
+                readOnly
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Calculated automatically from price per litre × litres filled
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Odometer Reading (km)
+              </label>
+              <input
+                type="number"
+                value={formData.odometerReading}
+                onChange={(e) => setFormData({ ...formData, odometerReading: e.target.value })}
+                className="input-field"
+                placeholder="e.g., 45000"
+              />
+            </div>
+          </>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={formData.amount}
+              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+              className="input-field"
+              placeholder="0.00"
+              required
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
@@ -160,21 +248,6 @@ export default function ExpenseForm() {
             required
           />
         </div>
-
-        {formData.category === 'Fuel' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Odometer Reading (km)
-            </label>
-            <input
-              type="number"
-              value={formData.odometerReading}
-              onChange={(e) => setFormData({ ...formData, odometerReading: e.target.value })}
-              className="input-field"
-              placeholder="e.g., 45000"
-            />
-          </div>
-        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

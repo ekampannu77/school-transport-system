@@ -11,6 +11,8 @@ interface Expense {
   description: string | null
   odometerReading: number | null
   receiptImageUrl: string | null
+  pricePerLitre: number | null
+  litresFilled: number | null
   bus: {
     registrationNumber: string
   }
@@ -89,6 +91,11 @@ export default function ExpenseList() {
                     <Calendar className="h-3 w-3" />
                     {new Date(expense.date).toLocaleDateString()}
                   </div>
+                  {expense.litresFilled && expense.category === 'Fuel' && (
+                    <div>
+                      {expense.litresFilled} L @ ₹{expense.pricePerLitre?.toFixed(2)}/L
+                    </div>
+                  )}
                   {expense.odometerReading && (
                     <div>Odometer: {expense.odometerReading.toLocaleString()} km</div>
                   )}
