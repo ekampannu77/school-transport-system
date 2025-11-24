@@ -20,6 +20,7 @@ interface BusData {
   _count: {
     expenses: number
     reminders: number
+    students: number
   }
   busRoutes: Array<{
     driver: {
@@ -133,6 +134,9 @@ export default function FleetTable() {
                 Mileage
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Students
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Alerts
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -189,6 +193,13 @@ export default function FleetTable() {
                     <span className="font-medium text-gray-900">{bus.mileage} km/L</span>
                   ) : (
                     <span className="text-gray-400">No data</span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {bus._count.students > 0 ? (
+                    <span className="font-medium">{bus._count.students}</span>
+                  ) : (
+                    <span className="text-gray-400">0</span>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
