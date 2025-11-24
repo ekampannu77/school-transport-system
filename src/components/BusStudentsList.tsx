@@ -12,7 +12,7 @@ interface Student {
   parentName: string
   parentContact: string
   emergencyContact: string | null
-  monthlyFee: number
+  monthlyFee: number | null
   startDate: string
   endDate: string | null
   isActive: boolean
@@ -244,7 +244,7 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                         <div className="text-sm font-medium text-gray-900">{student.name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">₹{student.monthlyFee.toLocaleString()}</div>
+                        <div className="text-sm font-semibold text-gray-900">₹{(student.monthlyFee || 0).toLocaleString()}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.class}</div>
