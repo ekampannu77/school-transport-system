@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { calculateFuelEfficiencyForPeriod } from '@/lib/services/analytics'
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,6 +69,18 @@ export async function GET(request: NextRequest) {
         registrationNumber: 'asc',
       },
     })
+
+    // Calculate mileage for each bus for the selected period
+    const busesWithMileage = await Promise.all(
+      buses.map(async (bus) => {
+        const mileageData = await calculateFuelEfficiencyForPeriod(bus.id, startDate, endDate)
+        return {
+          ...bus,
+          mileage: mileageData.kmPerLitre,
+          mileageData: mileageData,
+        }
+      })
+    )
 
     // Fetch expenses for the selected month
     const expenses = await prisma.expense.findMany({
@@ -141,18 +154,18 @@ export async function GET(request: NextRequest) {
 
     // Calculate summary statistics
     const summary = {
-      totalBuses: buses.length,
+      totalBuses: busesWithMileage.length,
       totalDrivers: drivers.filter(d => d.role === 'driver').length,
       totalConductors: drivers.filter(d => d.role === 'conductor').length,
       totalRoutes: routes.length,
-      activeBuses: buses.filter(b => b.busRoutes.length > 0).length,
+      activeBuses: busesWithMileage.filter(b => b.busRoutes.length > 0).length,
       totalExpenses: expenses.reduce((sum, exp) => sum + exp.amount, 0),
       pendingAlerts: alerts.length,
     }
 
     return NextResponse.json({
       summary,
-      buses,
+      buses: busesWithMileage,
       expenses,
       routes,
       drivers,

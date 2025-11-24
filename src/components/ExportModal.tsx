@@ -103,12 +103,13 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
 
         autoTable(doc, {
           startY: yPos,
-          head: [['Bus', 'Driver', 'Conductor', 'Route', 'Expenses (Rs.)']],
+          head: [['Bus', 'Driver', 'Conductor', 'Route', 'Mileage (km/L)', 'Expenses (Rs.)']],
           body: data.buses.map((bus: any) => [
             bus.registrationNumber,
             bus.primaryDriver?.name || 'Not assigned',
             bus.busRoutes[0]?.conductor?.name || 'Not assigned',
             bus.busRoutes[0]?.route?.routeName || 'Not assigned',
+            bus.mileage > 0 ? bus.mileage.toFixed(2) : 'No data',
             (expensesByBus[bus.registrationNumber] || 0).toLocaleString('en-IN')
           ]),
           theme: 'grid',
@@ -260,7 +261,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
         {/* Info text */}
         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-sm text-gray-700">
-            The report will include all buses with their assigned drivers, conductors, routes, and expenses for the selected date range. You can select a single month or multiple months.
+            The report will include all buses with their assigned drivers, conductors, routes, mileage (km/L) for the selected period, and expenses for the selected date range. You can select a single month or multiple months.
           </p>
         </div>
 
