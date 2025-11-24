@@ -12,6 +12,7 @@ interface BusData {
   chassisNumber: string
   seatingCapacity: number
   purchaseDate: string
+  mileage: number
   primaryDriver: {
     id: string
     name: string
@@ -129,6 +130,9 @@ export default function FleetTable() {
                 Capacity
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Mileage
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Alerts
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -179,6 +183,13 @@ export default function FleetTable() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {bus.seatingCapacity} seats
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {bus.mileage > 0 ? (
+                    <span className="font-medium text-gray-900">{bus.mileage} km/L</span>
+                  ) : (
+                    <span className="text-gray-400">No data</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {bus._count.reminders > 0 ? (

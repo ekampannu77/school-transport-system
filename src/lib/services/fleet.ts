@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { calculateFuelEfficiency } from './analytics'
 
 /**
  * Get fleet overview statistics
@@ -104,7 +105,7 @@ export async function getBusDetails(busId: string) {
 }
 
 /**
- * Get all buses with summary information
+ * Get all buses with summary information including mileage
  */
 export async function getAllBuses() {
   const buses = await prisma.bus.findMany({
@@ -153,5 +154,17 @@ export async function getAllBuses() {
     },
   })
 
-  return buses
+  // Calculate mileage for each bus
+  const busesWithMileage = await Promise.all(
+    buses.map(async (bus) => {
+      const mileageData = await calculateFuelEfficiency(bus.id)
+      return {
+        ...bus,
+        mileage: mileageData.kmPerLitre,
+        mileageData: mileageData,
+      }
+    })
+  )
+
+  return busesWithMileage
 }
