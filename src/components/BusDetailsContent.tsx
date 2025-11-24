@@ -6,6 +6,7 @@ import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
 import InsuranceTracker from './InsuranceTracker'
 import BusStudentsList from './BusStudentsList'
+import BusOverview from './BusOverview'
 
 interface BusData {
   id: string
@@ -13,6 +14,14 @@ interface BusData {
   chassisNumber: string
   seatingCapacity: number
   purchaseDate: string
+  totalExpenses: number
+  mileage: number
+  mileageData: {
+    kmPerLitre: number
+    totalDistance: number
+    totalLitres: number
+    fuelRecordsCount: number
+  }
   primaryDriver: {
     id: string
     name: string
@@ -25,6 +34,7 @@ interface BusData {
     expenses: number
     reminders: number
     documents: number
+    students: number
   }
   busRoutes: Array<{
     driver: {
@@ -36,6 +46,21 @@ interface BusData {
     route: {
       routeName: string
     }
+  }>
+  recentExpenses: Array<{
+    id: string
+    category: string
+    amount: number
+    date: string
+    description: string | null
+    odometerReading: number | null
+  }>
+  expensesByCategory: Record<string, number>
+  reminders: Array<{
+    id: string
+    type: string
+    dueDate: string
+    notes: string | null
   }>
 }
 
@@ -230,12 +255,7 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Bus Overview</h3>
-          <p className="text-gray-600">
-            Detailed statistics and expense history will be displayed here.
-          </p>
-        </div>
+        <BusOverview bus={bus} />
       )}
 
       {activeTab === 'students' && (
