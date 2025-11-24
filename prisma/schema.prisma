@@ -105,6 +105,8 @@ model Expense {
   description         String?
   odometerReading     Int?              @map("odometer_reading")
   receiptImageUrl     String?           @map("receipt_image_url")
+  pricePerLitre       Float?            @map("price_per_litre")    // For fuel expenses
+  litresFilled        Float?            @map("litres_filled")      // For fuel expenses
   createdAt           DateTime          @default(now()) @map("created_at")
   updatedAt           DateTime          @updatedAt @map("updated_at")
 

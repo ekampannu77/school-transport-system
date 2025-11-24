@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
-    const { busId, category, amount, date, description, odometerReading, receiptImageUrl } = body
+    const { busId, category, amount, date, description, odometerReading, receiptImageUrl, pricePerLitre, litresFilled } = body
 
     // Validation
     if (!busId || !category || !amount || !date) {
@@ -34,6 +34,8 @@ export async function POST(request: NextRequest) {
         description,
         odometerReading: odometerReading ? parseInt(odometerReading) : null,
         receiptImageUrl,
+        pricePerLitre: pricePerLitre ? parseFloat(pricePerLitre) : null,
+        litresFilled: litresFilled ? parseFloat(litresFilled) : null,
       },
       include: {
         bus: {
