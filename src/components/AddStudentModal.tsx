@@ -17,6 +17,7 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
     name: '',
     class: '',
     village: '',
+    monthlyFee: '',
     parentName: '',
     parentContact: '',
     emergencyContact: '',
@@ -58,6 +59,7 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
       name: '',
       class: '',
       village: '',
+      monthlyFee: '',
       parentName: '',
       parentContact: '',
       emergencyContact: '',
@@ -132,6 +134,23 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
                 value={formData.village}
                 onChange={(e) => setFormData({ ...formData, village: e.target.value })}
                 placeholder="Residential area"
+              />
+            </div>
+
+            {/* Monthly Fee */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Monthly Fee (₹) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={formData.monthlyFee}
+                onChange={(e) => setFormData({ ...formData, monthlyFee: e.target.value })}
+                placeholder="e.g., 1500"
               />
             </div>
 

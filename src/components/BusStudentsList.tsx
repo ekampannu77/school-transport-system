@@ -12,6 +12,7 @@ interface Student {
   parentName: string
   parentContact: string
   emergencyContact: string | null
+  monthlyFee: number
   startDate: string
   endDate: string | null
   isActive: boolean
@@ -107,6 +108,30 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     }
   }
 
+  const handleDelete = async (studentId: string, studentName: string) => {
+    if (!confirm(`Permanently delete ${studentName}? This action cannot be undone.`)) {
+      return
+    }
+
+    setDeletingId(studentId)
+    try {
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        fetchStudents()
+      } else {
+        alert('Failed to delete student')
+      }
+    } catch (error) {
+      console.error('Error deleting student:', error)
+      alert('Failed to delete student')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const activeStudents = students.filter(s => s.isActive)
   const inactiveStudents = students.filter(s => !s.isActive)
   const displayStudents = showInactive ? students : activeStudents
@@ -190,6 +215,9 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                       Student
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Monthly Fee
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Class
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -214,6 +242,9 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                     <tr key={student.id} className={`hover:bg-gray-50 ${!student.isActive ? 'bg-gray-50 opacity-60' : ''}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-gray-900">₹{student.monthlyFee.toLocaleString()}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.class}</div>
@@ -254,25 +285,35 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {student.isActive ? (
+                        <div className="flex items-center justify-end gap-3">
+                          {student.isActive ? (
+                            <button
+                              onClick={() => handleMarkInactive(student.id, student.name)}
+                              disabled={deletingId === student.id}
+                              className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
+                              title="Mark as stopped using bus"
+                            >
+                              Stop
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleMarkActive(student.id)}
+                              disabled={deletingId === student.id}
+                              className="text-green-600 hover:text-green-900 disabled:opacity-50"
+                              title="Mark as active again"
+                            >
+                              Activate
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleMarkInactive(student.id, student.name)}
+                            onClick={() => handleDelete(student.id, student.name)}
                             disabled={deletingId === student.id}
-                            className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
-                            title="Mark as stopped using bus"
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            title="Delete student permanently"
                           >
-                            Stop
+                            <Trash2 className="h-4 w-4" />
                           </button>
-                        ) : (
-                          <button
-                            onClick={() => handleMarkActive(student.id)}
-                            disabled={deletingId === student.id}
-                            className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                            title="Mark as active again"
-                          >
-                            Activate
-                          </button>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
