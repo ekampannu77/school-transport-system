@@ -1,16 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 
-interface AddStudentModalProps {
-  busId: string
+interface Student {
+  id: string
+  name: string
+  class: string
+  village: string
+  monthlyFee: number | null
+  parentName: string
+  parentContact: string
+  emergencyContact: string | null
+  startDate: string
+}
+
+interface EditStudentModalProps {
+  student: Student | null
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: AddStudentModalProps) {
+export default function EditStudentModal({ student, isOpen, onClose, onSuccess }: EditStudentModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [formData, setFormData] = useState({
@@ -21,28 +33,51 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
     parentName: '',
     parentContact: '',
     emergencyContact: '',
-    startDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+    startDate: '',
   })
+
+  useEffect(() => {
+    if (student) {
+      setFormData({
+        name: student.name,
+        class: student.class,
+        village: student.village,
+        monthlyFee: student.monthlyFee?.toString() || '0',
+        parentName: student.parentName,
+        parentContact: student.parentContact,
+        emergencyContact: student.emergencyContact || '',
+        startDate: student.startDate.split('T')[0],
+      })
+    }
+  }, [student])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!student) return
+
     setLoading(true)
     setError('')
 
     try {
-      const response = await fetch('/api/students', {
-        method: 'POST',
+      const response = await fetch(`/api/students/${student.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          busId,
+          name: formData.name,
+          class: formData.class,
+          village: formData.village,
+          monthlyFee: parseFloat(formData.monthlyFee),
+          parentName: formData.parentName,
+          parentContact: formData.parentContact,
+          emergencyContact: formData.emergencyContact || null,
+          startDate: new Date(formData.startDate),
         }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to add student')
+        throw new Error(data.error || 'Failed to update student')
       }
 
       onSuccess()
@@ -55,27 +90,17 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
   }
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      class: '',
-      village: '',
-      monthlyFee: '',
-      parentName: '',
-      parentContact: '',
-      emergencyContact: '',
-      startDate: new Date().toISOString().split('T')[0],
-    })
     setError('')
     onClose()
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !student) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Add New Student</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Edit Student</h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -230,7 +255,7 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
               className="btn-primary"
               disabled={loading}
             >
-              {loading ? 'Adding...' : 'Add Student'}
+              {loading ? 'Updating...' : 'Update Student'}
             </button>
           </div>
         </form>
