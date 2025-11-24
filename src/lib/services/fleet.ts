@@ -124,6 +124,11 @@ export async function getAllBuses() {
               status: 'Pending',
             },
           },
+          students: {
+            where: {
+              isActive: true,
+            },
+          },
         },
       },
       busRoutes: {
