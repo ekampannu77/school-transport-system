@@ -14,6 +14,7 @@ interface Student {
   parentContact: string
   emergencyContact: string | null
   monthlyFee: number | null
+  feePaid: number | null
   startDate: string
   endDate: string | null
   isActive: boolean
@@ -32,6 +33,8 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
   const [editingStudent, setEditingStudent] = useState<Student | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
+  const [editingFeePaidId, setEditingFeePaidId] = useState<string | null>(null)
+  const [tempFeePaid, setTempFeePaid] = useState<string>('')
 
   useEffect(() => {
     fetchStudents()
@@ -169,6 +172,38 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     }
   }
 
+  const handleFeePaidClick = (student: Student) => {
+    setEditingFeePaidId(student.id)
+    setTempFeePaid((student.feePaid || 0).toString())
+  }
+
+  const handleFeePaidSave = async (studentId: string) => {
+    try {
+      const response = await fetch(`/api/students/${studentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feePaid: parseFloat(tempFeePaid) || 0,
+        }),
+      })
+
+      if (response.ok) {
+        fetchStudents()
+        setEditingFeePaidId(null)
+      } else {
+        alert('Failed to update fee paid')
+      }
+    } catch (error) {
+      console.error('Error updating fee paid:', error)
+      alert('Failed to update fee paid')
+    }
+  }
+
+  const handleFeePaidCancel = () => {
+    setEditingFeePaidId(null)
+    setTempFeePaid('')
+  }
+
   const activeStudents = students.filter(s => s.isActive)
   const inactiveStudents = students.filter(s => !s.isActive)
   const displayStudents = showInactive ? students : activeStudents
@@ -261,7 +296,13 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                       Student
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Monthly Fee
+                      Fee
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Fee Paid
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Remaining
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Class
@@ -291,6 +332,40 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">₹{(student.monthlyFee || 0).toLocaleString()}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {editingFeePaidId === student.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={tempFeePaid}
+                              onChange={(e) => setTempFeePaid(e.target.value)}
+                              className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                              min="0"
+                              step="0.01"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleFeePaidSave(student.id)
+                                if (e.key === 'Escape') handleFeePaidCancel()
+                              }}
+                            />
+                            <button onClick={() => handleFeePaidSave(student.id)} className="text-green-600 hover:text-green-900 text-xs">✓</button>
+                            <button onClick={handleFeePaidCancel} className="text-red-600 hover:text-red-900 text-xs">✕</button>
+                          </div>
+                        ) : (
+                          <div
+                            className="text-sm font-semibold text-blue-600 cursor-pointer hover:text-blue-800"
+                            onClick={() => handleFeePaidClick(student)}
+                            title="Click to edit"
+                          >
+                            ₹{(student.feePaid || 0).toLocaleString()}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-orange-600">
+                          ₹{((student.monthlyFee || 0) - (student.feePaid || 0)).toLocaleString()}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.class}</div>

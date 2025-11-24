@@ -164,10 +164,10 @@ export default function EditStudentModal({ student, isOpen, onClose, onSuccess }
               />
             </div>
 
-            {/* Monthly Fee */}
+            {/* Fee */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Monthly Fee (₹) <span className="text-red-500">*</span>
+                Fee (₹) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
