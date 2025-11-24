@@ -242,6 +242,7 @@ model Student {
   parentName          String      @map("parent_name")
   parentContact       String      @map("parent_contact")   // Phone number
   emergencyContact    String?     @map("emergency_contact") // Optional emergency number
+  monthlyFee          Float       @default(0) @map("monthly_fee")  // Monthly bus fee
   busId               String      @map("bus_id")
   startDate           DateTime    @default(now()) @map("start_date")  // When student started using bus
   endDate             DateTime?   @map("end_date")         // When student stopped using bus (null = still active)

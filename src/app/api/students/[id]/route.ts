@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
-// DELETE - Remove student (soft delete)
+// DELETE - Permanently remove student
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -9,13 +9,12 @@ export async function DELETE(
   try {
     const { id } = params
 
-    // Soft delete - mark as inactive instead of actually deleting
-    const student = await prisma.student.update({
+    // Permanently delete the student
+    const student = await prisma.student.delete({
       where: { id },
-      data: { isActive: false },
     })
 
-    return NextResponse.json({ message: 'Student removed successfully', student })
+    return NextResponse.json({ message: 'Student deleted successfully', student })
   } catch (error) {
     console.error('Error deleting student:', error)
     return NextResponse.json(

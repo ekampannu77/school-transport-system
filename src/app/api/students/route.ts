@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       name,
       class: studentClass,
       village,
+      monthlyFee,
       parentName,
       parentContact,
       emergencyContact,
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validate required fields
-    if (!name || !studentClass || !village || !parentName || !parentContact || !busId) {
+    if (!name || !studentClass || !village || !parentName || !parentContact || !busId || monthlyFee === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
         name,
         class: studentClass,
         village,
+        monthlyFee: parseFloat(monthlyFee),
         parentName,
         parentContact,
         emergencyContact,
