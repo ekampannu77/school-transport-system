@@ -24,7 +24,7 @@ interface Student {
   class: string
   section: string | null
   monthlyFee: number
-  feePaid: number
+  feePaid: number | null
 }
 
 interface PaymentHistoryModalProps {
@@ -165,7 +165,7 @@ export default function PaymentHistoryModal({ student, isOpen, onClose }: Paymen
               </div>
               <div className="flex justify-between text-sm mt-2">
                 <span className="text-gray-600">Total Paid:</span>
-                <span className="font-semibold text-green-600">₹{student.feePaid.toFixed(2)}</span>
+                <span className="font-semibold text-green-600">₹{(student.feePaid || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
