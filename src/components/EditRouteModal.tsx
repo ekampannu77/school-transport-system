@@ -8,7 +8,7 @@ interface Route {
   routeName: string
   startPoint: string
   endPoint: string
-  distance: number
+  totalDistanceKm: number
 }
 
 interface EditRouteModalProps {
@@ -34,7 +34,7 @@ export default function EditRouteModal({ isOpen, route, onClose, onSuccess }: Ed
         routeName: route.routeName,
         startPoint: route.startPoint,
         endPoint: route.endPoint,
-        distance: route.distance.toString(),
+        distance: route.totalDistanceKm !== null && route.totalDistanceKm !== undefined ? route.totalDistanceKm.toString() : '',
       })
     }
   }, [route])

@@ -7,6 +7,7 @@ interface Student {
   id: string
   name: string
   class: string
+  section: string | null
   village: string
   monthlyFee: number | null
   parentName: string
@@ -28,6 +29,7 @@ export default function EditStudentModal({ student, isOpen, onClose, onSuccess }
   const [formData, setFormData] = useState({
     name: '',
     class: '',
+    section: '',
     village: '',
     monthlyFee: '',
     parentName: '',
@@ -41,6 +43,7 @@ export default function EditStudentModal({ student, isOpen, onClose, onSuccess }
       setFormData({
         name: student.name,
         class: student.class,
+        section: student.section || '',
         village: student.village,
         monthlyFee: student.monthlyFee?.toString() || '0',
         parentName: student.parentName,
@@ -65,6 +68,7 @@ export default function EditStudentModal({ student, isOpen, onClose, onSuccess }
         body: JSON.stringify({
           name: formData.name,
           class: formData.class,
+          section: formData.section || null,
           village: formData.village,
           monthlyFee: parseFloat(formData.monthlyFee),
           parentName: formData.parentName,
@@ -138,14 +142,26 @@ export default function EditStudentModal({ student, isOpen, onClose, onSuccess }
                 Class <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 required
-                min="1"
-                max="12"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={formData.class}
                 onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                placeholder="e.g., 5, 10"
+                placeholder="e.g., 5, 10, LKG, UKG"
+              />
+            </div>
+
+            {/* Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Section (Optional)
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={formData.section}
+                onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                placeholder="e.g., A, B, S, M, COM, Sci"
               />
             </div>
 

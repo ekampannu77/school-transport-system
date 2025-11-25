@@ -16,6 +16,7 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
   const [formData, setFormData] = useState({
     name: '',
     class: '',
+    section: '',
     village: '',
     monthlyFee: '',
     parentName: '',
@@ -58,6 +59,7 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
     setFormData({
       name: '',
       class: '',
+      section: '',
       village: '',
       monthlyFee: '',
       parentName: '',
@@ -113,14 +115,26 @@ export default function AddStudentModal({ busId, isOpen, onClose, onSuccess }: A
                 Class <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 required
-                min="1"
-                max="12"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 value={formData.class}
                 onChange={(e) => setFormData({ ...formData, class: e.target.value })}
-                placeholder="e.g., 5, 10"
+                placeholder="e.g., 5, 10, LKG, UKG"
+              />
+            </div>
+
+            {/* Section */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Section (Optional)
+              </label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                value={formData.section}
+                onChange={(e) => setFormData({ ...formData, section: e.target.value })}
+                placeholder="e.g., A, B, S, M, COM, Sci"
               />
             </div>
 

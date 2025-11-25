@@ -24,6 +24,7 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
     seatingCapacity: '',
     purchaseDate: new Date().toISOString().split('T')[0],
     primaryDriverId: '',
+    fitnessExpiry: '',
   })
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
         seatingCapacity: '',
         purchaseDate: new Date().toISOString().split('T')[0],
         primaryDriverId: '',
+        fitnessExpiry: '',
       })
 
       onSuccess()
@@ -185,6 +187,23 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Vehicle Fitness Expiry Date (Optional)
+            </label>
+            <input
+              type="date"
+              value={formData.fitnessExpiry}
+              onChange={(e) =>
+                setFormData({ ...formData, fitnessExpiry: e.target.value })
+              }
+              className="input-field"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              An alert will be created 30 days before expiry
+            </p>
           </div>
 
           {/* Buttons */}

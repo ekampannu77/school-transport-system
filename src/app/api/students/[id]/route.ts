@@ -33,9 +33,42 @@ export async function PATCH(
     const { id } = params
     const body = await request.json()
 
+    // Whitelist of allowed fields that can be updated
+    const allowedFields = [
+      'name',
+      'class',
+      'section',
+      'village',
+      'parentName',
+      'parentContact',
+      'emergencyContact',
+      'monthlyFee',
+      'feePaid',
+      'feeWaiverPercent',
+      'busId',
+      'endDate',
+      'isActive',
+    ]
+
+    // Filter body to only include allowed fields
+    const updateData: any = {}
+    for (const field of allowedFields) {
+      if (field in body) {
+        updateData[field] = body[field]
+      }
+    }
+
+    // Validate that we have at least one field to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: 'No valid fields provided for update' },
+        { status: 400 }
+      )
+    }
+
     const student = await prisma.student.update({
       where: { id },
-      data: body,
+      data: updateData,
       include: {
         bus: {
           select: {
