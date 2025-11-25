@@ -509,7 +509,6 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
             student={{
               ...selectedStudent,
               monthlyFee: selectedStudent.monthlyFee || 0,
-              feePaid: selectedStudent.feePaid || 0,
             }}
             isOpen={showPaymentModal}
             onClose={() => setShowPaymentModal(false)}
@@ -520,7 +519,6 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
             student={{
               ...selectedStudent,
               monthlyFee: selectedStudent.monthlyFee || 0,
-              feePaid: selectedStudent.feePaid || 0,
             }}
             isOpen={showPaymentHistory}
             onClose={() => setShowPaymentHistory(false)}
