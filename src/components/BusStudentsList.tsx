@@ -1,20 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, Plus, Trash2, MapPin, Phone, Edit } from 'lucide-react'
+import { Users, Plus, Trash2, MapPin, Phone, Edit, DollarSign, Receipt } from 'lucide-react'
 import AddStudentModal from './AddStudentModal'
 import EditStudentModal from './EditStudentModal'
+import CollectPaymentModal from './CollectPaymentModal'
+import PaymentHistoryModal from './PaymentHistoryModal'
 
 interface Student {
   id: string
   name: string
   class: string
+  section: string | null
   village: string
   parentName: string
   parentContact: string
   emergencyContact: string | null
   monthlyFee: number | null
   feePaid: number | null
+  feeWaiverPercent?: number
   startDate: string
   endDate: string | null
   isActive: boolean
@@ -35,6 +39,9 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
   const [showInactive, setShowInactive] = useState(false)
   const [editingFeePaidId, setEditingFeePaidId] = useState<string | null>(null)
   const [tempFeePaid, setTempFeePaid] = useState<string>('')
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false)
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
 
   useEffect(() => {
     fetchStudents()
@@ -204,6 +211,16 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     setTempFeePaid('')
   }
 
+  const handleCollectPayment = (student: Student) => {
+    setSelectedStudent(student)
+    setShowPaymentModal(true)
+  }
+
+  const handleShowPaymentHistory = (student: Student) => {
+    setSelectedStudent(student)
+    setShowPaymentHistory(true)
+  }
+
   const activeStudents = students.filter(s => s.isActive)
   const inactiveStudents = students.filter(s => !s.isActive)
   const displayStudents = showInactive ? students : activeStudents
@@ -308,6 +325,9 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                       Class
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Section
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Village
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -371,6 +391,9 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                         <div className="text-sm text-gray-900">{student.class}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{student.section || '-'}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.village}</div>
                       </td>
                       <td className="px-6 py-4">
@@ -406,7 +429,21 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleCollectPayment(student)}
+                            className="text-green-600 hover:text-green-900"
+                            title="Collect payment"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleShowPaymentHistory(student)}
+                            className="text-purple-600 hover:text-purple-900"
+                            title="Payment history"
+                          >
+                            <Receipt className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => handleEdit(student)}
                             className="text-blue-600 hover:text-blue-900"
@@ -465,6 +502,31 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
         onClose={() => setShowEditModal(false)}
         onSuccess={fetchStudents}
       />
+
+      {selectedStudent && (
+        <>
+          <CollectPaymentModal
+            student={{
+              ...selectedStudent,
+              monthlyFee: selectedStudent.monthlyFee || 0,
+              feePaid: selectedStudent.feePaid || 0,
+            }}
+            isOpen={showPaymentModal}
+            onClose={() => setShowPaymentModal(false)}
+            onSuccess={fetchStudents}
+          />
+
+          <PaymentHistoryModal
+            student={{
+              ...selectedStudent,
+              monthlyFee: selectedStudent.monthlyFee || 0,
+              feePaid: selectedStudent.feePaid || 0,
+            }}
+            isOpen={showPaymentHistory}
+            onClose={() => setShowPaymentHistory(false)}
+          />
+        </>
+      )}
     </>
   )
 }

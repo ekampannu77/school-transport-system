@@ -13,6 +13,7 @@ interface DriverData {
   licenseNumber: string | null
   licenseExpiry: string | null
   licenseReminder: string | null
+  aadharNumber: string | null
   phone: string
   address: string | null
   status: string
@@ -234,11 +235,129 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="card p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Driver Overview</h3>
-          <p className="text-gray-600">
-            Detailed statistics and route history will be displayed here.
-          </p>
+        <div className="space-y-6">
+          {/* Quick Stats */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Statistics</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-600 font-medium">Total Routes</p>
+                    <p className="text-3xl font-bold text-blue-900 mt-1">{driver._count.busRoutes}</p>
+                  </div>
+                  <CreditCard className="h-10 w-10 text-blue-400" />
+                </div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-600 font-medium">Documents</p>
+                    <p className="text-3xl font-bold text-green-900 mt-1">{driver._count.documents}</p>
+                  </div>
+                  <FileText className="h-10 w-10 text-green-400" />
+                </div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-purple-600 font-medium">Status</p>
+                    <p className="text-2xl font-bold text-purple-900 mt-1 capitalize">{driver.status}</p>
+                  </div>
+                  <User className="h-10 w-10 text-purple-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Assignment */}
+          {driver.busRoutes.length > 0 ? (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Route Assignment</h3>
+              <div className="space-y-4">
+                {driver.busRoutes.map((assignment, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">Route</p>
+                      <p className="text-lg font-semibold text-gray-900">{assignment.route.routeName}</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">Bus Registration</p>
+                      <p className="text-lg font-semibold text-gray-900">{assignment.bus.registrationNumber}</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-500">Role</p>
+                      <p className="text-lg font-semibold text-gray-900 capitalize">{driver.role}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="card p-6">
+              <div className="text-center py-8">
+                <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900">No Active Assignment</h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  This driver is not currently assigned to any route.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* License Information */}
+          {driver.role === 'driver' && (
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">License Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">License Number</p>
+                  <p className="text-lg font-semibold text-gray-900">{driver.licenseNumber || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Expiry Date</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {driver.licenseExpiry
+                      ? new Date(driver.licenseExpiry).toLocaleDateString('en-IN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })
+                      : 'Not provided'}
+                  </p>
+                  {driver.licenseExpiry && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(driver.licenseExpiry) > new Date()
+                        ? `Expires in ${Math.ceil((new Date(driver.licenseExpiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days`
+                        : 'Expired'}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Identification Information */}
+          <div className="card p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Identification Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Aadhar Card Number</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {driver.aadharNumber || 'Not provided'}
+                </p>
+                {driver.aadharNumber && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {driver.aadharNumber.replace(/(\d{4})(?=\d)/g, '$1 ')}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Role</p>
+                <p className="text-lg font-semibold text-gray-900 capitalize">{driver.role}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

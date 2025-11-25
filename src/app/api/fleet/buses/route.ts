@@ -18,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId } = body
+    const { registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId, fitnessExpiry } = body
 
     // Validation
     if (!registrationNumber || !chassisNumber || !seatingCapacity || !purchaseDate) {
@@ -47,6 +47,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Calculate fitness reminder (30 days before expiry)
+    let fitnessReminderDate = null
+    if (fitnessExpiry) {
+      const expiryDate = new Date(fitnessExpiry)
+      fitnessReminderDate = new Date(expiryDate)
+      fitnessReminderDate.setDate(fitnessReminderDate.getDate() - 30)
+    }
+
     // Create new bus
     const bus = await prisma.bus.create({
       data: {
@@ -55,8 +63,23 @@ export async function POST(request: NextRequest) {
         seatingCapacity: parseInt(seatingCapacity),
         purchaseDate: new Date(purchaseDate),
         primaryDriverId: primaryDriverId || null,
+        fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
+        fitnessReminder: fitnessReminderDate,
       },
     })
+
+    // Create fitness expiry reminder if date is provided
+    if (fitnessExpiry) {
+      await prisma.reminder.create({
+        data: {
+          busId: bus.id,
+          type: 'Fitness_Certificate',
+          dueDate: new Date(fitnessExpiry),
+          status: 'Pending',
+          notes: 'Vehicle fitness certificate expiring soon',
+        },
+      })
+    }
 
     return NextResponse.json(bus, { status: 201 })
   } catch (error: any) {
@@ -80,7 +103,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId } = body
+    const { id, registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId, fitnessExpiry } = body
 
     if (!id) {
       return NextResponse.json(
@@ -111,6 +134,14 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Calculate fitness reminder (30 days before expiry)
+    let fitnessReminderDate = null
+    if (fitnessExpiry) {
+      const expiryDate = new Date(fitnessExpiry)
+      fitnessReminderDate = new Date(expiryDate)
+      fitnessReminderDate.setDate(fitnessReminderDate.getDate() - 30)
+    }
+
     // Update bus
     const bus = await prisma.bus.update({
       where: { id },
@@ -120,8 +151,43 @@ export async function PUT(request: NextRequest) {
         seatingCapacity: parseInt(seatingCapacity),
         purchaseDate: new Date(purchaseDate),
         primaryDriverId: primaryDriverId || null,
+        fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
+        fitnessReminder: fitnessReminderDate,
       },
     })
+
+    // Update or create fitness expiry reminder
+    if (fitnessExpiry) {
+      // Try to find existing fitness reminder
+      const existingReminder = await prisma.reminder.findFirst({
+        where: {
+          busId: id,
+          type: 'Fitness_Certificate',
+        },
+      })
+
+      if (existingReminder) {
+        // Update existing reminder
+        await prisma.reminder.update({
+          where: { id: existingReminder.id },
+          data: {
+            dueDate: new Date(fitnessExpiry),
+            status: 'Pending',
+          },
+        })
+      } else {
+        // Create new reminder
+        await prisma.reminder.create({
+          data: {
+            busId: id,
+            type: 'Fitness_Certificate',
+            dueDate: new Date(fitnessExpiry),
+            status: 'Pending',
+            notes: 'Vehicle fitness certificate expiring soon',
+          },
+        })
+      }
+    }
 
     return NextResponse.json(bus)
   } catch (error: any) {

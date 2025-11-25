@@ -50,6 +50,14 @@ enum UserRole {
   viewer
 }
 
+enum PaymentMethod {
+  CASH
+  CHEQUE
+  UPI
+  ONLINE_TRANSFER
+  CARD
+}
+
 model Bus {
   id                  String      @id @default(cuid())
   registrationNumber  String      @unique @map("registration_number")
@@ -59,6 +67,8 @@ model Bus {
   primaryDriverId     String?     @map("primary_driver_id")
   insuranceExpiry     DateTime?   @map("insurance_expiry")
   insuranceReminder   DateTime?   @map("insurance_reminder")
+  fitnessExpiry       DateTime?   @map("fitness_expiry")
+  fitnessReminder     DateTime?   @map("fitness_reminder")
   createdAt           DateTime    @default(now()) @map("created_at")
   updatedAt           DateTime    @updatedAt @map("updated_at")
 
@@ -81,6 +91,7 @@ model Driver {
   licenseNumber       String?       @unique @map("license_number")
   licenseExpiry       DateTime?     @map("license_expiry")
   licenseReminder     DateTime?     @map("license_reminder")
+  aadharNumber        String?       @map("aadhar_number")
   phone               String
   address             String?
   status              DriverStatus  @default(active)
@@ -237,13 +248,15 @@ model User {
 model Student {
   id                  String      @id @default(cuid())
   name                String
-  class               String      // e.g., "Class 5-A", "Grade 10-B"
+  class               String      // e.g., "5", "10", "12" (just the grade number)
+  section             String?     // e.g., "A", "B", "S", "M", "COM", "Sci" (optional section/division)
   village             String      // Residential area/village
   parentName          String      @map("parent_name")
   parentContact       String      @map("parent_contact")   // Phone number
   emergencyContact    String?     @map("emergency_contact") // Optional emergency number
   monthlyFee          Float       @default(0) @map("monthly_fee")  // Total bus fee
-  feePaid             Float       @default(0) @map("fee_paid")      // Fee paid so far
+  feePaid             Float       @default(0) @map("fee_paid")      // Fee paid so far (will be calculated from payments)
+  feeWaiverPercent    Float?      @default(0) @map("fee_waiver_percent") // Scholarship/discount percentage
   busId               String      @map("bus_id")
   startDate           DateTime    @default(now()) @map("start_date")  // When student started using bus
   endDate             DateTime?   @map("end_date")         // When student stopped using bus (null = still active)
@@ -253,10 +266,46 @@ model Student {
 
   // Relations
   bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
+  payments            Payment[]
 
   @@index([busId])
   @@index([class])
   @@index([village])
   @@index([isActive])
   @@map("students")
+}
+
+model Payment {
+  id                  String          @id @default(cuid())
+  studentId           String          @map("student_id")
+  student             Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  amount              Float
+  paymentDate         DateTime        @default(now()) @map("payment_date")
+
+  // Quarter tracking (1, 2, 3, 4)
+  quarter             Int             // 1=Apr-Jun, 2=Jul-Sep, 3=Oct-Dec, 4=Jan-Mar
+  academicYear        String          @map("academic_year") // e.g., "2025-26"
+
+  // Payment details
+  paymentMethod       PaymentMethod   @map("payment_method")
+  transactionId       String?         @map("transaction_id")     // For online/UPI payments
+  receiptNumber       String          @unique @map("receipt_number")
+  checkNumber         String?         @map("check_number")       // For cheque payments
+  bankName            String?         @map("bank_name")          // For cheque payments
+
+  // Who collected
+  collectedBy         String?         @map("collected_by")       // Admin/Staff name
+
+  // Additional info
+  remarks             String?
+
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  @@index([studentId])
+  @@index([quarter, academicYear])
+  @@index([paymentDate])
+  @@index([receiptNumber])
+  @@map("payments")
 }

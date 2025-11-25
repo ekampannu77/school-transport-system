@@ -11,6 +11,7 @@ interface Driver {
   phone: string
   address: string | null
   licenseExpiry: string | null
+  aadharNumber: string | null
   status: string
 }
 
@@ -31,6 +32,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
     phone: '',
     address: '',
     licenseExpiry: '',
+    aadharNumber: '',
     status: 'active',
   })
 
@@ -43,6 +45,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
         phone: driver.phone,
         address: driver.address || '',
         licenseExpiry: driver.licenseExpiry ? new Date(driver.licenseExpiry).toISOString().split('T')[0] : '',
+        aadharNumber: driver.aadharNumber || '',
         status: driver.status,
       })
     }
@@ -169,6 +172,23 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
               </div>
             </>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Aadhar Number *
+            </label>
+            <input
+              type="text"
+              value={formData.aadharNumber}
+              onChange={(e) =>
+                setFormData({ ...formData, aadharNumber: e.target.value })
+              }
+              className="input-field"
+              placeholder="e.g., XXXX-XXXX-XXXX"
+              maxLength={12}
+              required
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

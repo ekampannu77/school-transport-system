@@ -29,10 +29,10 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, role, licenseNumber, phone, address, licenseExpiry, status } = body
+    const { name, role, licenseNumber, phone, address, licenseExpiry, aadharNumber, status } = body
 
     // Validation
-    if (!name || !phone) {
+    if (!name || !phone || !aadharNumber) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
         phone,
         address: address || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        aadharNumber: aadharNumber || null,
         status: status || DriverStatus.active,
       },
     })
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, name, role, licenseNumber, phone, address, licenseExpiry, status } = body
+    const { id, name, role, licenseNumber, phone, address, licenseExpiry, aadharNumber, status } = body
 
     if (!id) {
       return NextResponse.json(
@@ -117,6 +118,7 @@ export async function PUT(request: NextRequest) {
         phone,
         address: address || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        aadharNumber: aadharNumber || null,
         status,
       },
     })

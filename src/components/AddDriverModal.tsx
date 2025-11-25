@@ -19,6 +19,7 @@ export default function AddDriverModal({ isOpen, onClose, onSuccess }: AddDriver
     phone: '',
     address: '',
     licenseExpiry: '',
+    aadharNumber: '',
     status: 'active',
   })
 
@@ -50,6 +51,7 @@ export default function AddDriverModal({ isOpen, onClose, onSuccess }: AddDriver
         phone: '',
         address: '',
         licenseExpiry: '',
+        aadharNumber: '',
         status: 'active',
       })
 
@@ -154,6 +156,23 @@ export default function AddDriverModal({ isOpen, onClose, onSuccess }: AddDriver
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
+              Aadhar Number *
+            </label>
+            <input
+              type="text"
+              value={formData.aadharNumber}
+              onChange={(e) =>
+                setFormData({ ...formData, aadharNumber: e.target.value })
+              }
+              className="input-field"
+              placeholder="e.g., XXXX-XXXX-XXXX"
+              maxLength={12}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               Phone *
             </label>
             <input
@@ -180,21 +199,6 @@ export default function AddDriverModal({ isOpen, onClose, onSuccess }: AddDriver
               className="input-field"
               placeholder="Enter address"
               rows={2}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              License Expiry *
-            </label>
-            <input
-              type="date"
-              value={formData.licenseExpiry}
-              onChange={(e) =>
-                setFormData({ ...formData, licenseExpiry: e.target.value })
-              }
-              className="input-field"
-              required
             />
           </div>
 

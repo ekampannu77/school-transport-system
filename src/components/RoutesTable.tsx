@@ -11,7 +11,7 @@ interface RouteData {
   routeName: string
   startPoint: string
   endPoint: string
-  distance: number
+  totalDistanceKm: number
   busRoutes: Array<{
     bus: {
       registrationNumber: string
@@ -147,7 +147,7 @@ export default function RoutesTable() {
                         </div>
                         <div className="text-xs text-gray-500 flex items-center">
                           <Navigation className="h-3 w-3 mr-1" />
-                          {route.distance} km
+                          {route.totalDistanceKm} km
                         </div>
                       </div>
                     </div>
@@ -159,7 +159,7 @@ export default function RoutesTable() {
                     {route.endPoint}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                    {route.distance} km
+                    {route.totalDistanceKm} km
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {route.busRoutes.length > 0 ? (
