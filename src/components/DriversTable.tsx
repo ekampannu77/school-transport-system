@@ -14,6 +14,7 @@ interface DriverData {
   phone: string
   address: string | null
   licenseExpiry: string | null
+  aadharNumber: string | null
   status: 'active' | 'inactive'
   _count: {
     busRoutes: number
