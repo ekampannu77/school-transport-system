@@ -14,7 +14,7 @@ async function main() {
   })
 
   console.log('🎉 FINAL IMPORT RESULTS')
-  console.log('=' * 70)
+  console.log('='.repeat(70))
 
   let totalStudents = 0
   buses.forEach((b, i) => {
