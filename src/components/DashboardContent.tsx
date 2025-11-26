@@ -81,18 +81,21 @@ export default function DashboardContent() {
           value={`₹${overview?.expenses.thisMonth.toLocaleString() || 0}`}
           icon={DollarSign}
           subtitle="All categories combined"
+          href="/expenses"
         />
         <StatCard
           title="Buses on Road"
           value={overview?.buses.total || 0}
           icon={Bus}
           subtitle="Fleet vehicles"
+          href="/fleet"
         />
         <StatCard
           title="Active Drivers/Conductors"
           value={overview?.drivers.active || 0}
           icon={Users}
           subtitle={`${overview?.drivers.total || 0} total drivers/conductors`}
+          href="/drivers"
         />
         <StatCard
           title="Critical Alerts"
