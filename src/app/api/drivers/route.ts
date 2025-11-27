@@ -29,12 +29,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, role, licenseNumber, phone, address, licenseExpiry, aadharNumber, status } = body
+    const { name, role, licenseNumber, phone, address, licenseExpiry, status } = body
 
     // Validation
-    if (!name || !phone || !aadharNumber) {
+    if (!name || !phone) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: name and phone' },
         { status: 400 }
       )
     }
@@ -64,7 +64,6 @@ export async function POST(request: NextRequest) {
         phone,
         address: address || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
-        aadharNumber: aadharNumber || null,
         status: status || DriverStatus.active,
       },
     })
@@ -72,17 +71,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(driver, { status: 201 })
   } catch (error: any) {
     console.error('Error creating driver:', error)
+    console.error('Error code:', error.code)
+    console.error('Error message:', error.message)
 
     // Handle unique constraint violation
     if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0] || 'field'
       return NextResponse.json(
-        { error: 'Driver with this license number already exists' },
+        { error: `Driver with this ${field} already exists`, details: error.message },
         { status: 409 }
       )
     }
 
     return NextResponse.json(
-      { error: 'Failed to create driver' },
+      { error: 'Failed to create driver', details: error.message },
       { status: 500 }
     )
   }
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, name, role, licenseNumber, phone, address, licenseExpiry, aadharNumber, status } = body
+    const { id, name, role, licenseNumber, phone, address, licenseExpiry, status } = body
 
     if (!id) {
       return NextResponse.json(
@@ -118,7 +120,6 @@ export async function PUT(request: NextRequest) {
         phone,
         address: address || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
-        aadharNumber: aadharNumber || null,
         status,
       },
     })
