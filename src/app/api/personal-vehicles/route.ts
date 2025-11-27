@@ -138,6 +138,50 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PUT - Update a personal vehicle
+export async function PUT(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Vehicle ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const body = await request.json()
+    const { vehicleName, vehicleNumber, vehicleType, ownerName, ownerContact } = body
+
+    if (!vehicleName || !ownerName) {
+      return NextResponse.json(
+        { error: 'Vehicle name and owner name are required' },
+        { status: 400 }
+      )
+    }
+
+    const vehicle = await prisma.personalVehicle.update({
+      where: { id },
+      data: {
+        vehicleName,
+        vehicleNumber: vehicleNumber || null,
+        vehicleType: vehicleType || null,
+        ownerName,
+        ownerContact: ownerContact || null,
+      },
+    })
+
+    return NextResponse.json(vehicle)
+  } catch (error) {
+    console.error('Error updating personal vehicle:', error)
+    return NextResponse.json(
+      { error: 'Failed to update personal vehicle' },
+      { status: 500 }
+    )
+  }
+}
+
 // DELETE - Deactivate a personal vehicle
 export async function DELETE(request: NextRequest) {
   try {
