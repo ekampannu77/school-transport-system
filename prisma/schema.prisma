@@ -9,26 +9,33 @@ datasource db {
 }
 
 model Bus {
-  id                 String        @id @default(cuid())
-  registrationNumber String        @unique @map("registration_number")
-  chassisNumber      String        @unique @map("chassis_number")
-  seatingCapacity    Int           @map("seating_capacity")
-  purchaseDate       DateTime      @map("purchase_date")
-  primaryDriverId    String?       @map("primary_driver_id")
-  insuranceExpiry    DateTime?     @map("insurance_expiry")
-  insuranceReminder  DateTime?     @map("insurance_reminder")
-  createdAt          DateTime      @default(now()) @map("created_at")
-  updatedAt          DateTime      @updatedAt @map("updated_at")
-  fitnessExpiry      DateTime?     @map("fitness_expiry")
-  fitnessReminder    DateTime?     @map("fitness_reminder")
+  id                 String            @id @default(cuid())
+  registrationNumber String            @unique @map("registration_number")
+  chassisNumber      String            @unique @map("chassis_number")
+  seatingCapacity    Int               @map("seating_capacity")
+  purchaseDate       DateTime          @map("purchase_date")
+  primaryDriverId    String?           @map("primary_driver_id")
+  insuranceExpiry    DateTime?         @map("insurance_expiry")
+  insuranceReminder  DateTime?         @map("insurance_reminder")
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedAt          DateTime          @updatedAt @map("updated_at")
+  fitnessExpiry      DateTime?         @map("fitness_expiry")
+  fitnessReminder    DateTime?         @map("fitness_reminder")
+  ownershipType      BusOwnership      @default(SCHOOL_OWNED) @map("ownership_type")
+  privateOwnerName   String?           @map("private_owner_name")
+  privateOwnerContact String?          @map("private_owner_contact")
+  privateOwnerBank   String?           @map("private_owner_bank")
+  schoolCommission   Float?            @default(0) @map("school_commission")
   documents          BusDocument[]
   busRoutes          BusRoute[]
-  primaryDriver      Driver?       @relation("primaryDriver", fields: [primaryDriverId], references: [id], onDelete: SetNull)
+  primaryDriver      Driver?           @relation("primaryDriver", fields: [primaryDriverId], references: [id], onDelete: SetNull)
   expenses           Expense[]
   reminders          Reminder[]
   students           Student[]
+  ownerPayments      BusOwnerPayment[]
 
   @@index([primaryDriverId])
+  @@index([ownershipType])
   @@map("buses")
 }
 
@@ -232,6 +239,27 @@ model Payment {
   @@map("payments")
 }
 
+model BusOwnerPayment {
+  id              String             @id @default(cuid())
+  busId           String             @map("bus_id")
+  amount          Float
+  paymentDate     DateTime           @map("payment_date")
+  periodStartDate DateTime           @map("period_start_date")
+  periodEndDate   DateTime           @map("period_end_date")
+  paymentMethod   PaymentMethod      @map("payment_method")
+  transactionRef  String?            @map("transaction_ref")
+  notes           String?
+  status          OwnerPaymentStatus @default(PENDING)
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  bus             Bus                @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([paymentDate])
+  @@index([status])
+  @@map("bus_owner_payments")
+}
+
 enum DriverStatus {
   active
   inactive
@@ -277,4 +305,14 @@ enum PaymentMethod {
   UPI
   ONLINE_TRANSFER
   CARD
+}
+
+enum BusOwnership {
+  SCHOOL_OWNED
+  PRIVATE_OWNED
+}
+
+enum OwnerPaymentStatus {
+  PENDING
+  PAID
 }
