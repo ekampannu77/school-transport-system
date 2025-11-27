@@ -24,29 +24,81 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create expense
-    const expense = await prisma.expense.create({
-      data: {
-        busId,
-        category,
-        amount: parseFloat(amount),
-        date: new Date(date),
-        description,
-        odometerReading: odometerReading ? parseInt(odometerReading) : null,
-        receiptImageUrl,
-        pricePerLitre: pricePerLitre ? parseFloat(pricePerLitre) : null,
-        litresFilled: litresFilled ? parseFloat(litresFilled) : null,
-      },
-      include: {
-        bus: {
-          select: {
-            registrationNumber: true,
+    // Additional validation for fuel expenses
+    if (category === 'Fuel') {
+      if (!litresFilled || !pricePerLitre) {
+        return NextResponse.json(
+          { error: 'Fuel expenses require litresFilled and pricePerLitre' },
+          { status: 400 }
+        )
+      }
+
+      // Check fuel inventory stock
+      const purchases = await prisma.fuelPurchase.aggregate({
+        _sum: {
+          quantity: true,
+        },
+      })
+
+      const dispenses = await prisma.fuelDispense.aggregate({
+        _sum: {
+          quantity: true,
+        },
+      })
+
+      const totalPurchased = purchases._sum.quantity || 0
+      const totalDispensed = dispenses._sum.quantity || 0
+      const currentStock = totalPurchased - totalDispensed
+
+      if (parseFloat(litresFilled) > currentStock) {
+        return NextResponse.json(
+          { error: `Insufficient fuel in stock. Available: ${currentStock} litres` },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Use a transaction to create both expense and fuel dispense (if applicable)
+    const result = await prisma.$transaction(async (tx) => {
+      // Create expense
+      const expense = await tx.expense.create({
+        data: {
+          busId,
+          category,
+          amount: parseFloat(amount),
+          date: new Date(date),
+          description,
+          odometerReading: odometerReading ? parseInt(odometerReading) : null,
+          receiptImageUrl,
+          pricePerLitre: pricePerLitre ? parseFloat(pricePerLitre) : null,
+          litresFilled: litresFilled ? parseFloat(litresFilled) : null,
+        },
+        include: {
+          bus: {
+            select: {
+              registrationNumber: true,
+            },
           },
         },
-      },
+      })
+
+      // If fuel expense, also create fuel dispense record
+      if (category === 'Fuel' && litresFilled) {
+        await tx.fuelDispense.create({
+          data: {
+            busId,
+            date: new Date(date),
+            quantity: parseFloat(litresFilled),
+            odometerReading: odometerReading ? parseInt(odometerReading) : null,
+            notes: description || null,
+          },
+        })
+      }
+
+      return expense
     })
 
-    return NextResponse.json(expense, { status: 201 })
+    return NextResponse.json(result, { status: 201 })
   } catch (error) {
     console.error('Error creating expense:', error)
     return NextResponse.json(
