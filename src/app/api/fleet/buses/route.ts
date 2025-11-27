@@ -18,12 +18,23 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId, fitnessExpiry } = body
+    const {
+      registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId, fitnessExpiry,
+      ownershipType, privateOwnerName, privateOwnerContact, privateOwnerBank, schoolCommission
+    } = body
 
     // Validation
     if (!registrationNumber || !chassisNumber || !seatingCapacity || !purchaseDate) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Validate private bus ownership fields
+    if (ownershipType === 'PRIVATE_OWNED' && !privateOwnerName) {
+      return NextResponse.json(
+        { error: 'Private owner name is required for private buses' },
         { status: 400 }
       )
     }
@@ -65,6 +76,11 @@ export async function POST(request: NextRequest) {
         ...(primaryDriverId && { primaryDriver: { connect: { id: primaryDriverId } } }),
         fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
         fitnessReminder: fitnessReminderDate,
+        ownershipType: ownershipType || 'SCHOOL_OWNED',
+        privateOwnerName: privateOwnerName || null,
+        privateOwnerContact: privateOwnerContact || null,
+        privateOwnerBank: privateOwnerBank || null,
+        schoolCommission: schoolCommission ? parseFloat(schoolCommission) : 0,
       },
     })
 
@@ -106,11 +122,22 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId, fitnessExpiry } = body
+    const {
+      id, registrationNumber, chassisNumber, seatingCapacity, purchaseDate, primaryDriverId, fitnessExpiry,
+      ownershipType, privateOwnerName, privateOwnerContact, privateOwnerBank, schoolCommission
+    } = body
 
     if (!id) {
       return NextResponse.json(
         { error: 'Bus ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate private bus ownership fields
+    if (ownershipType === 'PRIVATE_OWNED' && !privateOwnerName) {
+      return NextResponse.json(
+        { error: 'Private owner name is required for private buses' },
         { status: 400 }
       )
     }
@@ -156,6 +183,11 @@ export async function PUT(request: NextRequest) {
         ...(primaryDriverId ? { primaryDriver: { connect: { id: primaryDriverId } } } : { primaryDriver: { disconnect: true } }),
         fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
         fitnessReminder: fitnessReminderDate,
+        ownershipType: ownershipType || 'SCHOOL_OWNED',
+        privateOwnerName: privateOwnerName || null,
+        privateOwnerContact: privateOwnerContact || null,
+        privateOwnerBank: privateOwnerBank || null,
+        schoolCommission: schoolCommission ? parseFloat(schoolCommission) : 0,
       },
     })
 
