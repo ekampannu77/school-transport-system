@@ -33,6 +33,7 @@ model Bus {
   reminders          Reminder[]
   students           Student[]
   ownerPayments      BusOwnerPayment[]
+  fuelDispenses      FuelDispense[]
 
   @@index([primaryDriverId])
   @@index([ownershipType])
@@ -315,4 +316,37 @@ enum BusOwnership {
 enum OwnerPaymentStatus {
   PENDING
   PAID
+}
+
+model FuelPurchase {
+  id              String         @id @default(cuid())
+  date            DateTime
+  quantity        Float          // in litres
+  pricePerLitre   Float          @map("price_per_litre")
+  totalCost       Float          @map("total_cost")
+  vendor          String?
+  invoiceNumber   String?        @map("invoice_number")
+  notes           String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@map("fuel_purchases")
+}
+
+model FuelDispense {
+  id            String   @id @default(cuid())
+  busId         String   @map("bus_id")
+  date          DateTime
+  quantity      Float    // in litres
+  odometerReading Int?   @map("odometer_reading")
+  dispensedBy   String?  @map("dispensed_by")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  bus           Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([date])
+  @@map("fuel_dispenses")
 }
