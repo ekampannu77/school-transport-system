@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
-import { Bus, DollarSign, AlertTriangle, Home, User, MapPin, FileText, Wallet } from 'lucide-react'
+import { Bus, DollarSign, AlertTriangle, Home, User, MapPin, FileText, Wallet, Users } from 'lucide-react'
 import ExportModal from './ExportModal'
 
 export default function Navigation() {
@@ -17,6 +17,7 @@ export default function Navigation() {
     { href: '/drivers', label: 'Drivers', icon: User },
     { href: '/routes', label: 'Routes', icon: MapPin },
     { href: '/fees', label: 'Fees', icon: Wallet },
+    { href: '/private-buses', label: 'Private Buses', icon: Users },
     { href: '/expenses', label: 'Expenses', icon: DollarSign },
     { href: '/alerts', label: 'Alerts', icon: AlertTriangle },
   ]
