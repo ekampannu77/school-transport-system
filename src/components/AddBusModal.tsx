@@ -25,6 +25,11 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
     purchaseDate: new Date().toISOString().split('T')[0],
     primaryDriverId: '',
     fitnessExpiry: '',
+    ownershipType: 'SCHOOL_OWNED',
+    privateOwnerName: '',
+    privateOwnerContact: '',
+    privateOwnerBank: '',
+    schoolCommission: '0',
   })
 
   useEffect(() => {
@@ -71,6 +76,11 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
         purchaseDate: new Date().toISOString().split('T')[0],
         primaryDriverId: '',
         fitnessExpiry: '',
+        ownershipType: 'SCHOOL_OWNED',
+        privateOwnerName: '',
+        privateOwnerContact: '',
+        privateOwnerBank: '',
+        schoolCommission: '0',
       })
 
       onSuccess()
@@ -204,6 +214,100 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
             <p className="text-xs text-gray-500 mt-1">
               An alert will be created 30 days before expiry
             </p>
+          </div>
+
+          {/* Ownership Section */}
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Bus Ownership</h3>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ownership Type *
+              </label>
+              <select
+                value={formData.ownershipType}
+                onChange={(e) => setFormData({ ...formData, ownershipType: e.target.value })}
+                className="input-field"
+                required
+              >
+                <option value="SCHOOL_OWNED">School Owned</option>
+                <option value="PRIVATE_OWNED">Private Owned</option>
+              </select>
+            </div>
+
+            {/* Private Owner Fields - Only show if private owned */}
+            {formData.ownershipType === 'PRIVATE_OWNED' && (
+              <div className="mt-4 space-y-4 bg-blue-50 p-4 rounded-lg">
+                <p className="text-xs text-blue-800 mb-2">Private Bus Owner Information</p>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Owner Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.privateOwnerName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, privateOwnerName: e.target.value })
+                    }
+                    className="input-field"
+                    placeholder="Enter owner's name"
+                    required={formData.ownershipType === 'PRIVATE_OWNED'}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Owner Contact (Optional)
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.privateOwnerContact}
+                    onChange={(e) =>
+                      setFormData({ ...formData, privateOwnerContact: e.target.value })
+                    }
+                    className="input-field"
+                    placeholder="Phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bank Account Details (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.privateOwnerBank}
+                    onChange={(e) =>
+                      setFormData({ ...formData, privateOwnerBank: e.target.value })
+                    }
+                    className="input-field"
+                    placeholder="Account number / IFSC"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    School Commission % (Optional)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.schoolCommission}
+                    onChange={(e) =>
+                      setFormData({ ...formData, schoolCommission: e.target.value })
+                    }
+                    className="input-field"
+                    placeholder="e.g., 10"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Percentage of revenue the school keeps
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Buttons */}
