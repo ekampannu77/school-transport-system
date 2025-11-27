@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         chassisNumber,
         seatingCapacity: parseInt(seatingCapacity),
         purchaseDate: new Date(purchaseDate),
-        primaryDriverId: primaryDriverId || null,
+        ...(primaryDriverId && { primaryDriver: { connect: { id: primaryDriverId } } }),
         fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
         fitnessReminder: fitnessReminderDate,
       },
@@ -84,17 +84,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(bus, { status: 201 })
   } catch (error: any) {
     console.error('Error creating bus:', error)
+    console.error('Error code:', error.code)
+    console.error('Error message:', error.message)
+    console.error('Error meta:', error.meta)
 
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       return NextResponse.json(
-        { error: 'Bus with this registration or chassis number already exists' },
+        { error: 'Bus with this registration or chassis number already exists', details: error.message },
         { status: 409 }
       )
     }
 
     return NextResponse.json(
-      { error: 'Failed to create bus' },
+      { error: 'Failed to create bus', details: error.message },
       { status: 500 }
     )
   }
@@ -150,7 +153,7 @@ export async function PUT(request: NextRequest) {
         chassisNumber,
         seatingCapacity: parseInt(seatingCapacity),
         purchaseDate: new Date(purchaseDate),
-        primaryDriverId: primaryDriverId || null,
+        ...(primaryDriverId ? { primaryDriver: { connect: { id: primaryDriverId } } } : { primaryDriver: { disconnect: true } }),
         fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
         fitnessReminder: fitnessReminderDate,
       },
@@ -192,6 +195,8 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(bus)
   } catch (error: any) {
     console.error('Error updating bus:', error)
+    console.error('Error code:', error.code)
+    console.error('Error message:', error.message)
 
     if (error.code === 'P2025') {
       return NextResponse.json(
@@ -208,7 +213,7 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Failed to update bus' },
+      { error: 'Failed to update bus', details: error.message },
       { status: 500 }
     )
   }

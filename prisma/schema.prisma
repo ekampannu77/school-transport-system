@@ -1,14 +1,235 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bus {
+  id                 String        @id @default(cuid())
+  registrationNumber String        @unique @map("registration_number")
+  chassisNumber      String        @unique @map("chassis_number")
+  seatingCapacity    Int           @map("seating_capacity")
+  purchaseDate       DateTime      @map("purchase_date")
+  primaryDriverId    String?       @map("primary_driver_id")
+  insuranceExpiry    DateTime?     @map("insurance_expiry")
+  insuranceReminder  DateTime?     @map("insurance_reminder")
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+  fitnessExpiry      DateTime?     @map("fitness_expiry")
+  fitnessReminder    DateTime?     @map("fitness_reminder")
+  documents          BusDocument[]
+  busRoutes          BusRoute[]
+  primaryDriver      Driver?       @relation("primaryDriver", fields: [primaryDriverId], references: [id], onDelete: SetNull)
+  expenses           Expense[]
+  reminders          Reminder[]
+  students           Student[]
+
+  @@index([primaryDriverId])
+  @@map("buses")
+}
+
+model Driver {
+  id                   String           @id @default(cuid())
+  name                 String
+  role                 DriverRole       @default(driver)
+  licenseNumber        String?          @unique @map("license_number")
+  licenseExpiry        DateTime?        @map("license_expiry")
+  licenseReminder      DateTime?        @map("license_reminder")
+  phone                String
+  address              String?
+  status               DriverStatus     @default(active)
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+  aadharNumber         String?          @map("aadhar_number")
+  busRoutesAsConductor BusRoute[]       @relation("conductor")
+  busRoutes            BusRoute[]
+  primaryBuses         Bus[]            @relation("primaryDriver")
+  documents            DriverDocument[]
+
+  @@map("drivers")
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  busId           String          @map("bus_id")
+  category        ExpenseCategory
+  amount          Float
+  date            DateTime
+  description     String?
+  odometerReading Int?            @map("odometer_reading")
+  receiptImageUrl String?         @map("receipt_image_url")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  litresFilled    Float?          @map("litres_filled")
+  pricePerLitre   Float?          @map("price_per_litre")
+  bus             Bus             @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([date])
+  @@index([category])
+  @@map("expenses")
+}
+
+model Route {
+  id              String     @id @default(cuid())
+  routeName       String     @unique @map("route_name")
+  startPoint      String     @map("start_point")
+  endPoint        String     @map("end_point")
+  totalDistanceKm Float      @map("total_distance_km")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  busRoutes       BusRoute[]
+
+  @@map("routes")
+}
+
+model BusRoute {
+  id           String    @id @default(cuid())
+  busId        String    @map("bus_id")
+  driverId     String?   @map("driver_id")
+  conductorId  String?   @map("conductor_id")
+  routeId      String    @map("route_id")
+  academicTerm String    @map("academic_term")
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  bus          Bus       @relation(fields: [busId], references: [id], onDelete: Cascade)
+  conductor    Driver?   @relation("conductor", fields: [conductorId], references: [id])
+  driver       Driver?   @relation(fields: [driverId], references: [id])
+  route        Route     @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@unique([busId, routeId, academicTerm])
+  @@index([busId])
+  @@index([driverId])
+  @@index([conductorId])
+  @@index([routeId])
+  @@map("bus_routes")
+}
+
+model Reminder {
+  id        String         @id @default(cuid())
+  busId     String         @map("bus_id")
+  type      ReminderType
+  dueDate   DateTime       @map("due_date")
+  status    ReminderStatus @default(Pending)
+  notes     String?
+  createdAt DateTime       @default(now()) @map("created_at")
+  updatedAt DateTime       @updatedAt @map("updated_at")
+  bus       Bus            @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("reminders")
+}
+
+model BusDocument {
+  id           String    @id @default(cuid())
+  busId        String    @map("bus_id")
+  documentType String    @map("document_type")
+  documentName String    @map("document_name")
+  fileUrl      String    @map("file_url")
+  expiryDate   DateTime? @map("expiry_date")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  bus          Bus       @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([documentType])
+  @@index([expiryDate])
+  @@map("bus_documents")
+}
+
+model DriverDocument {
+  id           String    @id @default(cuid())
+  driverId     String    @map("driver_id")
+  documentType String    @map("document_type")
+  documentName String    @map("document_name")
+  fileUrl      String    @map("file_url")
+  expiryDate   DateTime? @map("expiry_date")
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  driver       Driver    @relation(fields: [driverId], references: [id], onDelete: Cascade)
+
+  @@index([driverId])
+  @@index([documentType])
+  @@index([expiryDate])
+  @@map("driver_documents")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      UserRole @default(staff)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([username])
+  @@index([email])
+  @@map("users")
+}
+
+model Student {
+  id               String    @id @default(cuid())
+  name             String
+  class            String
+  village          String
+  parentName       String    @map("parent_name")
+  parentContact    String    @map("parent_contact")
+  emergencyContact String?   @map("emergency_contact")
+  busId            String    @map("bus_id")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  endDate          DateTime? @map("end_date")
+  startDate        DateTime  @default(now()) @map("start_date")
+  monthlyFee       Float     @default(0) @map("monthly_fee")
+  feePaid          Float     @default(0) @map("fee_paid")
+  section          String?
+  feeWaiverPercent Float?    @default(0) @map("fee_waiver_percent")
+  payments         Payment[]
+  bus              Bus       @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([class])
+  @@index([village])
+  @@index([isActive])
+  @@map("students")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  studentId     String        @map("student_id")
+  amount        Float
+  paymentDate   DateTime      @default(now()) @map("payment_date")
+  quarter       Int
+  academicYear  String        @map("academic_year")
+  paymentMethod PaymentMethod @map("payment_method")
+  transactionId String?       @map("transaction_id")
+  receiptNumber String        @unique @map("receipt_number")
+  checkNumber   String?       @map("check_number")
+  bankName      String?       @map("bank_name")
+  collectedBy   String?       @map("collected_by")
+  remarks       String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  student       Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([quarter, academicYear])
+  @@index([paymentDate])
+  @@index([receiptNumber])
+  @@map("payments")
 }
 
 enum DriverStatus {
@@ -56,256 +277,4 @@ enum PaymentMethod {
   UPI
   ONLINE_TRANSFER
   CARD
-}
-
-model Bus {
-  id                  String      @id @default(cuid())
-  registrationNumber  String      @unique @map("registration_number")
-  chassisNumber       String      @unique @map("chassis_number")
-  seatingCapacity     Int         @map("seating_capacity")
-  purchaseDate        DateTime    @map("purchase_date")
-  primaryDriverId     String?     @map("primary_driver_id")
-  insuranceExpiry     DateTime?   @map("insurance_expiry")
-  insuranceReminder   DateTime?   @map("insurance_reminder")
-  fitnessExpiry       DateTime?   @map("fitness_expiry")
-  fitnessReminder     DateTime?   @map("fitness_reminder")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  primaryDriver       Driver?     @relation("primaryDriver", fields: [primaryDriverId], references: [id], onDelete: SetNull)
-  expenses            Expense[]
-  busRoutes           BusRoute[]
-  reminders           Reminder[]
-  documents           BusDocument[]
-  students            Student[]
-
-  @@index([primaryDriverId])
-  @@map("buses")
-}
-
-model Driver {
-  id                  String        @id @default(cuid())
-  name                String
-  role                DriverRole    @default(driver)
-  licenseNumber       String?       @unique @map("license_number")
-  licenseExpiry       DateTime?     @map("license_expiry")
-  licenseReminder     DateTime?     @map("license_reminder")
-  aadharNumber        String?       @map("aadhar_number")
-  phone               String
-  address             String?
-  status              DriverStatus  @default(active)
-  createdAt           DateTime      @default(now()) @map("created_at")
-  updatedAt           DateTime      @updatedAt @map("updated_at")
-
-  // Relations
-  primaryBuses        Bus[]         @relation("primaryDriver")
-  busRoutes           BusRoute[]
-  busRoutesAsConductor BusRoute[]   @relation("conductor")
-  documents           DriverDocument[]
-
-  @@map("drivers")
-}
-
-model Expense {
-  id                  String            @id @default(cuid())
-  busId               String            @map("bus_id")
-  category            ExpenseCategory
-  amount              Float
-  date                DateTime
-  description         String?
-  odometerReading     Int?              @map("odometer_reading")
-  receiptImageUrl     String?           @map("receipt_image_url")
-  pricePerLitre       Float?            @map("price_per_litre")    // For fuel expenses
-  litresFilled        Float?            @map("litres_filled")      // For fuel expenses
-  createdAt           DateTime          @default(now()) @map("created_at")
-  updatedAt           DateTime          @updatedAt @map("updated_at")
-
-  // Relations
-  bus                 Bus               @relation(fields: [busId], references: [id], onDelete: Cascade)
-
-  @@index([busId])
-  @@index([date])
-  @@index([category])
-  @@map("expenses")
-}
-
-model Route {
-  id                  String      @id @default(cuid())
-  routeName           String      @unique @map("route_name")
-  startPoint          String      @map("start_point")
-  endPoint            String      @map("end_point")
-  totalDistanceKm     Float       @map("total_distance_km")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  busRoutes           BusRoute[]
-
-  @@map("routes")
-}
-
-model BusRoute {
-  id                  String      @id @default(cuid())
-  busId               String      @map("bus_id")
-  driverId            String?     @map("driver_id")
-  conductorId         String?     @map("conductor_id")
-  routeId             String      @map("route_id")
-  academicTerm        String      @map("academic_term")
-  startDate           DateTime    @map("start_date")
-  endDate             DateTime?   @map("end_date")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
-  driver              Driver?     @relation(fields: [driverId], references: [id], onDelete: SetNull)
-  conductor           Driver?     @relation("conductor", fields: [conductorId], references: [id], onDelete: SetNull)
-  route               Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
-
-  @@unique([busId, routeId, academicTerm])
-  @@index([busId])
-  @@index([driverId])
-  @@index([conductorId])
-  @@index([routeId])
-  @@map("bus_routes")
-}
-
-model Reminder {
-  id                  String          @id @default(cuid())
-  busId               String          @map("bus_id")
-  type                ReminderType
-  dueDate             DateTime        @map("due_date")
-  status              ReminderStatus  @default(Pending)
-  notes               String?
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-
-  // Relations
-  bus                 Bus             @relation(fields: [busId], references: [id], onDelete: Cascade)
-
-  @@index([busId])
-  @@index([dueDate])
-  @@index([status])
-  @@map("reminders")
-}
-
-model BusDocument {
-  id                  String      @id @default(cuid())
-  busId               String      @map("bus_id")
-  documentType        String      @map("document_type")  // Insurance, Registration, Fitness, etc.
-  documentName        String      @map("document_name")
-  fileUrl             String      @map("file_url")       // Base64 or cloud storage URL
-  expiryDate          DateTime?   @map("expiry_date")
-  notes               String?
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
-
-  @@index([busId])
-  @@index([documentType])
-  @@index([expiryDate])
-  @@map("bus_documents")
-}
-
-model DriverDocument {
-  id                  String      @id @default(cuid())
-  driverId            String      @map("driver_id")
-  documentType        String      @map("document_type")  // License, Medical Certificate, ID, etc.
-  documentName        String      @map("document_name")
-  fileUrl             String      @map("file_url")       // Base64 or cloud storage URL
-  expiryDate          DateTime?   @map("expiry_date")
-  notes               String?
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  driver              Driver      @relation(fields: [driverId], references: [id], onDelete: Cascade)
-
-  @@index([driverId])
-  @@index([documentType])
-  @@index([expiryDate])
-  @@map("driver_documents")
-}
-
-model User {
-  id                  String      @id @default(cuid())
-  username            String      @unique
-  email               String      @unique
-  password            String      // Hashed password
-  role                UserRole    @default(staff)
-  isActive            Boolean     @default(true) @map("is_active")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  @@index([username])
-  @@index([email])
-  @@map("users")
-}
-
-model Student {
-  id                  String      @id @default(cuid())
-  name                String
-  class               String      // e.g., "5", "10", "12" (just the grade number)
-  section             String?     // e.g., "A", "B", "S", "M", "COM", "Sci" (optional section/division)
-  village             String      // Residential area/village
-  parentName          String      @map("parent_name")
-  parentContact       String      @map("parent_contact")   // Phone number
-  emergencyContact    String?     @map("emergency_contact") // Optional emergency number
-  monthlyFee          Float       @default(0) @map("monthly_fee")  // Total bus fee
-  feePaid             Float       @default(0) @map("fee_paid")      // Fee paid so far (will be calculated from payments)
-  feeWaiverPercent    Float?      @default(0) @map("fee_waiver_percent") // Scholarship/discount percentage
-  busId               String      @map("bus_id")
-  startDate           DateTime    @default(now()) @map("start_date")  // When student started using bus
-  endDate             DateTime?   @map("end_date")         // When student stopped using bus (null = still active)
-  isActive            Boolean     @default(true) @map("is_active")
-  createdAt           DateTime    @default(now()) @map("created_at")
-  updatedAt           DateTime    @updatedAt @map("updated_at")
-
-  // Relations
-  bus                 Bus         @relation(fields: [busId], references: [id], onDelete: Cascade)
-  payments            Payment[]
-
-  @@index([busId])
-  @@index([class])
-  @@index([village])
-  @@index([isActive])
-  @@map("students")
-}
-
-model Payment {
-  id                  String          @id @default(cuid())
-  studentId           String          @map("student_id")
-  student             Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  amount              Float
-  paymentDate         DateTime        @default(now()) @map("payment_date")
-
-  // Quarter tracking (1, 2, 3, 4)
-  quarter             Int             // 1=Apr-Jun, 2=Jul-Sep, 3=Oct-Dec, 4=Jan-Mar
-  academicYear        String          @map("academic_year") // e.g., "2025-26"
-
-  // Payment details
-  paymentMethod       PaymentMethod   @map("payment_method")
-  transactionId       String?         @map("transaction_id")     // For online/UPI payments
-  receiptNumber       String          @unique @map("receipt_number")
-  checkNumber         String?         @map("check_number")       // For cheque payments
-  bankName            String?         @map("bank_name")          // For cheque payments
-
-  // Who collected
-  collectedBy         String?         @map("collected_by")       // Admin/Staff name
-
-  // Additional info
-  remarks             String?
-
-  createdAt           DateTime        @default(now()) @map("created_at")
-  updatedAt           DateTime        @updatedAt @map("updated_at")
-
-  @@index([studentId])
-  @@index([quarter, academicYear])
-  @@index([paymentDate])
-  @@index([receiptNumber])
-  @@map("payments")
 }
