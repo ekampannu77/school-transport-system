@@ -350,3 +350,37 @@ model FuelDispense {
   @@index([date])
   @@map("fuel_dispenses")
 }
+
+model PersonalVehicle {
+  id               String                      @id @default(cuid())
+  vehicleName      String                      @map("vehicle_name")
+  vehicleNumber    String?                     @map("vehicle_number")
+  vehicleType      String?                     @map("vehicle_type") // Car, Bike, Scooter, etc.
+  ownerName        String                      @map("owner_name")
+  ownerContact     String?                     @map("owner_contact")
+  isActive         Boolean                     @default(true) @map("is_active")
+  createdAt        DateTime                    @default(now()) @map("created_at")
+  updatedAt        DateTime                    @updatedAt @map("updated_at")
+  fuelDispenses    PersonalVehicleFuelDispense[]
+
+  @@index([isActive])
+  @@map("personal_vehicles")
+}
+
+model PersonalVehicleFuelDispense {
+  id              String          @id @default(cuid())
+  vehicleId       String          @map("vehicle_id")
+  date            DateTime
+  quantity        Float           // in litres
+  odometerReading Int?            @map("odometer_reading")
+  dispensedBy     String?         @map("dispensed_by")
+  purpose         String?         // Purpose of the trip/fuel use
+  notes           String?
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  vehicle         PersonalVehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([date])
+  @@map("personal_vehicle_fuel_dispenses")
+}
