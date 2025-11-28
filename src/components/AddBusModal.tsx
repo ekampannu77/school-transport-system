@@ -96,9 +96,9 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="card max-w-md w-full p-6">
+      <div className="card max-w-md w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Add New Bus</h2>
           <button
             onClick={onClose}
@@ -108,15 +108,17 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
           </button>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4" id="addBusForm">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Registration Number *
@@ -310,21 +312,23 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
             )}
           </div>
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 btn-secondary"
-              disabled={loading}
-            >
-              Cancel
-            </button>
-            <button type="submit" className="flex-1 btn-primary" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Bus'}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        {/* Buttons - Fixed at bottom */}
+        <div className="flex gap-3 p-6 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 btn-secondary"
+            disabled={loading}
+          >
+            Cancel
+          </button>
+          <button type="submit" form="addBusForm" className="flex-1 btn-primary" disabled={loading}>
+            {loading ? 'Adding...' : 'Add Bus'}
+          </button>
+        </div>
       </div>
     </div>
   )
