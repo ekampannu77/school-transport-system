@@ -27,7 +27,7 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload | null>
 export async function createTokenEdge(payload: JWTPayload): Promise<string> {
   const token = await new SignJWT(payload as any)
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
+    .setExpirationTime('1d')
     .sign(secret)
 
   return token

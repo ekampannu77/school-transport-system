@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, TrendingUp, TrendingDown, Droplet, AlertTriangle, Car, Fuel, User, Eye, Bus, Edit2, X, Calendar, Filter } from 'lucide-react'
+import { Plus, Trash2, TrendingUp, TrendingDown, Droplet, AlertTriangle, Car, Fuel, User, Eye, Edit2, X, Calendar, Filter } from 'lucide-react'
 import PersonalVehicleModal from '@/components/PersonalVehicleModal'
 
 interface FuelPurchase {
@@ -47,24 +47,6 @@ interface PersonalVehicleDispense {
   }
 }
 
-interface BusInfo {
-  id: string
-  registrationNumber: string
-}
-
-interface BusDispense {
-  id: string
-  busId: string
-  date: string
-  quantity: number
-  odometerReading: number | null
-  dispensedBy: string | null
-  notes: string | null
-  bus: {
-    registrationNumber: string
-  }
-}
-
 interface InventorySummary {
   currentStock: number
   totalPurchased: number
@@ -81,12 +63,10 @@ export default function FuelInventoryPage() {
   const [purchases, setPurchases] = useState<FuelPurchase[]>([])
   const [personalVehicles, setPersonalVehicles] = useState<PersonalVehicle[]>([])
   const [personalDispenses, setPersonalDispenses] = useState<PersonalVehicleDispense[]>([])
-  const [buses, setBuses] = useState<BusInfo[]>([])
-  const [busDispenses, setBusDispenses] = useState<BusDispense[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'purchases' | 'buses' | 'personal'>('purchases')
+  const [activeTab, setActiveTab] = useState<'purchases' | 'personal'>('purchases')
 
   // Date filters
   const [dateFilter, setDateFilter] = useState({
@@ -125,16 +105,6 @@ export default function FuelInventoryPage() {
     notes: '',
   })
 
-  // Bus dispense form
-  const [busDispenseForm, setBusDispenseForm] = useState({
-    busId: '',
-    date: new Date().toISOString().split('T')[0],
-    quantity: '',
-    odometerReading: '',
-    dispensedBy: '',
-    notes: '',
-  })
-
   const [showAddVehicle, setShowAddVehicle] = useState(false)
   const [selectedVehicle, setSelectedVehicle] = useState<PersonalVehicle | null>(null)
 
@@ -143,8 +113,6 @@ export default function FuelInventoryPage() {
     fetchPurchases()
     fetchPersonalVehicles()
     fetchPersonalDispenses()
-    fetchBuses()
-    fetchBusDispenses()
   }, [])
 
   const fetchInventory = async () => {
@@ -188,26 +156,6 @@ export default function FuelInventoryPage() {
       setPersonalDispenses(data)
     } catch (error) {
       console.error('Error fetching personal dispenses:', error)
-    }
-  }
-
-  const fetchBuses = async () => {
-    try {
-      const response = await fetch('/api/fleet/buses')
-      const data = await response.json()
-      setBuses(data)
-    } catch (error) {
-      console.error('Error fetching buses:', error)
-    }
-  }
-
-  const fetchBusDispenses = async () => {
-    try {
-      const response = await fetch('/api/fuel/dispenses')
-      const data = await response.json()
-      setBusDispenses(data)
-    } catch (error) {
-      console.error('Error fetching bus dispenses:', error)
     }
   }
 
@@ -381,62 +329,6 @@ export default function FuelInventoryPage() {
 
       await Promise.all([fetchInventory(), fetchPersonalVehicles(), fetchPersonalDispenses()])
       alert('Dispense record deleted successfully!')
-    } catch (error: any) {
-      alert(error.message)
-    }
-  }
-
-  // Bus dispense handler
-  const handleBusDispense = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
-
-    try {
-      const response = await fetch('/api/fuel/dispenses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(busDispenseForm),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to dispense fuel')
-      }
-
-      setBusDispenseForm({
-        busId: '',
-        date: new Date().toISOString().split('T')[0],
-        quantity: '',
-        odometerReading: '',
-        dispensedBy: '',
-        notes: '',
-      })
-      await Promise.all([fetchInventory(), fetchBusDispenses()])
-      alert('Fuel dispensed to bus successfully!')
-    } catch (error: any) {
-      alert(error.message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleDeleteBusDispense = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this bus dispense record?')) return
-
-    try {
-      const response = await fetch(`/api/fuel/dispenses?id=${id}`, {
-        method: 'DELETE',
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to delete dispense record')
-      }
-
-      await Promise.all([fetchInventory(), fetchBusDispenses()])
-      alert('Bus dispense record deleted successfully!')
     } catch (error: any) {
       alert(error.message)
     }
@@ -689,19 +581,6 @@ export default function FuelInventoryPage() {
             <div className="flex items-center gap-2">
               <Droplet className="h-4 w-4" />
               Fuel Purchases
-            </div>
-          </button>
-          <button
-            onClick={() => setActiveTab('buses')}
-            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'buses'
-                ? 'border-blue-600 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Bus className="h-4 w-4" />
-              Bus Dispenses
             </div>
           </button>
           <button
@@ -965,186 +844,6 @@ export default function FuelInventoryPage() {
             </div>
           )}
         </div>
-          </>
-        )}
-
-        {activeTab === 'buses' && (
-          <>
-            {/* Bus Dispense Form */}
-            <div className="card p-6 mb-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Bus className="h-5 w-5 text-yellow-600" />
-                <h2 className="text-xl font-semibold text-gray-900">Dispense Fuel to Bus</h2>
-              </div>
-
-              <form onSubmit={handleBusDispense} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Bus *
-                    </label>
-                    <select
-                      value={busDispenseForm.busId}
-                      onChange={(e) => setBusDispenseForm({ ...busDispenseForm, busId: e.target.value })}
-                      className="input-field"
-                      required
-                    >
-                      <option value="">Select a bus</option>
-                      {buses.map((bus) => (
-                        <option key={bus.id} value={bus.id}>
-                          {bus.registrationNumber}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date *
-                    </label>
-                    <input
-                      type="date"
-                      value={busDispenseForm.date}
-                      onChange={(e) => setBusDispenseForm({ ...busDispenseForm, date: e.target.value })}
-                      className="input-field"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Quantity (Litres) *
-                    </label>
-                    <input
-                      type="number"
-                      value={busDispenseForm.quantity}
-                      onChange={(e) => setBusDispenseForm({ ...busDispenseForm, quantity: e.target.value })}
-                      className="input-field"
-                      placeholder="0.00"
-                      step="0.01"
-                      min="0"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Odometer Reading
-                    </label>
-                    <input
-                      type="number"
-                      value={busDispenseForm.odometerReading}
-                      onChange={(e) => setBusDispenseForm({ ...busDispenseForm, odometerReading: e.target.value })}
-                      className="input-field"
-                      placeholder="Current KM"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dispensed By
-                    </label>
-                    <input
-                      type="text"
-                      value={busDispenseForm.dispensedBy}
-                      onChange={(e) => setBusDispenseForm({ ...busDispenseForm, dispensedBy: e.target.value })}
-                      className="input-field"
-                      placeholder="Name of person"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Notes
-                    </label>
-                    <input
-                      type="text"
-                      value={busDispenseForm.notes}
-                      onChange={(e) => setBusDispenseForm({ ...busDispenseForm, notes: e.target.value })}
-                      className="input-field"
-                      placeholder="Additional notes"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="btn-primary"
-                >
-                  {submitting ? 'Dispensing...' : 'Dispense Fuel'}
-                </button>
-              </form>
-            </div>
-
-            {/* Bus Dispense History */}
-            <div className="card p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Bus Dispense History</h2>
-
-              {filterByDate(busDispenses).length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg">
-                  <Bus className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">
-                    {busDispenses.length === 0 ? 'No fuel dispensed to buses yet' : 'No dispenses match the selected date range'}
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Date
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Bus
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Quantity
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Odometer
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Dispensed By
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {filterByDate(busDispenses).map((dispense) => (
-                        <tr key={dispense.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(dispense.date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {dispense.bus.registrationNumber}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {dispense.quantity.toFixed(2)} L
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {dispense.odometerReading ? `${dispense.odometerReading.toLocaleString()} km` : '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {dispense.dispensedBy || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <button
-                              onClick={() => handleDeleteBusDispense(dispense.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete dispense record"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
           </>
         )}
 
