@@ -49,4 +49,45 @@
   .badge-info {
     @apply bg-blue-100 text-blue-800;
   }
+
+  .btn-loading {
+    @apply relative text-transparent;
+  }
+
+  .btn-loading::after {
+    content: '';
+    @apply absolute inset-0 m-auto w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin;
+  }
+}
+
+@layer utilities {
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-modal-in {
+    animation: modalIn 0.2s ease-out;
+  }
+
+  @keyframes modalIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 }

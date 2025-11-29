@@ -9,6 +9,11 @@ interface Bus {
   chassisNumber: string
   seatingCapacity: number
   purchaseDate: string
+  ownershipType?: 'SCHOOL_OWNED' | 'PRIVATE_OWNED'
+  privateOwnerName?: string | null
+  privateOwnerContact?: string | null
+  privateOwnerBank?: string | null
+  schoolCommission?: number | null
   primaryDriver?: {
     id: string
     name: string
@@ -37,6 +42,11 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
     seatingCapacity: '',
     purchaseDate: '',
     primaryDriverId: '',
+    ownershipType: 'SCHOOL_OWNED' as 'SCHOOL_OWNED' | 'PRIVATE_OWNED',
+    privateOwnerName: '',
+    privateOwnerContact: '',
+    privateOwnerBank: '',
+    schoolCommission: '',
   })
 
   useEffect(() => {
@@ -53,6 +63,11 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
         seatingCapacity: bus.seatingCapacity.toString(),
         purchaseDate: new Date(bus.purchaseDate).toISOString().split('T')[0],
         primaryDriverId: bus.primaryDriver?.id || '',
+        ownershipType: bus.ownershipType || 'SCHOOL_OWNED',
+        privateOwnerName: bus.privateOwnerName || '',
+        privateOwnerContact: bus.privateOwnerContact || '',
+        privateOwnerBank: bus.privateOwnerBank || '',
+        schoolCommission: bus.schoolCommission?.toString() || '',
       })
     }
   }, [bus])
@@ -188,6 +203,93 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
               required
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ownership Type *
+            </label>
+            <select
+              value={formData.ownershipType}
+              onChange={(e) => setFormData({ ...formData, ownershipType: e.target.value as 'SCHOOL_OWNED' | 'PRIVATE_OWNED' })}
+              className="input-field"
+              required
+            >
+              <option value="SCHOOL_OWNED">School Owned</option>
+              <option value="PRIVATE_OWNED">Private Owned</option>
+            </select>
+          </div>
+
+          {/* Private Owner Fields - Only show when Private Owned is selected */}
+          {formData.ownershipType === 'PRIVATE_OWNED' && (
+            <>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                <h3 className="text-sm font-medium text-blue-900">Private Owner Information</h3>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Owner Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.privateOwnerName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, privateOwnerName: e.target.value })
+                    }
+                    className="input-field"
+                    required
+                    placeholder="Enter owner's full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Owner Contact
+                  </label>
+                  <input
+                    type="tel"
+                    value={formData.privateOwnerContact}
+                    onChange={(e) =>
+                      setFormData({ ...formData, privateOwnerContact: e.target.value })
+                    }
+                    className="input-field"
+                    placeholder="Phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bank Account Details
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.privateOwnerBank}
+                    onChange={(e) =>
+                      setFormData({ ...formData, privateOwnerBank: e.target.value })
+                    }
+                    className="input-field"
+                    placeholder="Bank name and account number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    School Commission (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.schoolCommission}
+                    onChange={(e) =>
+                      setFormData({ ...formData, schoolCommission: e.target.value })
+                    }
+                    className="input-field"
+                    min="0"
+                    step="0.01"
+                    placeholder="Commission amount"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

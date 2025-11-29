@@ -1,27 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { registerSchema, validateRequest } from '@/lib/validations'
+import { authLogger } from '@/lib/logger'
+import { withRateLimit, REGISTER_RATE_LIMIT } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = withRateLimit(request, REGISTER_RATE_LIMIT)
+  if (rateLimitResponse) {
+    authLogger.warn('Registration rate limit exceeded', { ip: request.headers.get('x-forwarded-for') })
+    return rateLimitResponse
+  }
+
   try {
     const body = await request.json()
-    const { username, email, password, role = 'staff' } = body
 
-    // Validation
-    if (!username || !email || !password) {
+    // Validate input
+    const validation = validateRequest(registerSchema, body)
+    if (!validation.success) {
+      authLogger.info('Registration validation failed', { error: validation.error })
       return NextResponse.json(
-        { error: 'Username, email, and password are required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    // Check password strength
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: 'Password must be at least 6 characters' },
-        { status: 400 }
-      )
-    }
+    const { username, email, password, role } = validation.data
 
     // Check if username already exists
     const existingUser = await prisma.user.findFirst({
@@ -34,6 +39,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingUser) {
+      authLogger.info('Registration attempt with existing credentials', { username, email })
       return NextResponse.json(
         { error: 'Username or email already exists' },
         { status: 409 }
@@ -60,12 +66,14 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    authLogger.info('User registered successfully', { username, userId: user.id, role })
+
     return NextResponse.json({
       message: 'User created successfully',
       user,
     }, { status: 201 })
   } catch (error) {
-    console.error('Registration error:', error)
+    authLogger.error('Registration error', error)
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }

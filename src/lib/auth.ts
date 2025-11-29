@@ -2,8 +2,20 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
-// JWT Secret - in production, this should be in environment variables
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
+// JWT Secret - must be set in environment variables
+// Lazy-loaded to avoid build-time errors
+let _jwtSecret: string | undefined
+
+function getJwtSecret(): string {
+  if (!_jwtSecret) {
+    const secret = process.env.JWT_SECRET
+    if (!secret) {
+      throw new Error('JWT_SECRET environment variable is required. Please set it in your .env file.')
+    }
+    _jwtSecret = secret
+  }
+  return _jwtSecret
+}
 const TOKEN_NAME = 'auth_token'
 
 export interface JWTPayload {
@@ -30,7 +42,7 @@ export async function verifyPassword(password: string, hashedPassword: string): 
  * Create a JWT token for a user
  */
 export function createToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, {
+  return jwt.sign(payload, getJwtSecret(), {
     expiresIn: '1d', // Token expires in 1 day
   })
 }
@@ -40,7 +52,7 @@ export function createToken(payload: JWTPayload): string {
  */
 export function verifyToken(token: string): JWTPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload
+    return jwt.verify(token, getJwtSecret()) as JWTPayload
   } catch (error) {
     return null
   }

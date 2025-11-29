@@ -2,19 +2,32 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyPassword } from '@/lib/auth'
 import { createTokenEdge } from '@/lib/auth-edge'
+import { loginSchema, validateRequest } from '@/lib/validations'
+import { authLogger } from '@/lib/logger'
+import { withRateLimit, AUTH_RATE_LIMIT } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
+  // Check rate limit
+  const rateLimitResponse = withRateLimit(request, AUTH_RATE_LIMIT)
+  if (rateLimitResponse) {
+    authLogger.warn('Login rate limit exceeded', { ip: request.headers.get('x-forwarded-for') })
+    return rateLimitResponse
+  }
+
   try {
     const body = await request.json()
-    const { username, password } = body
 
-    // Validation
-    if (!username || !password) {
+    // Validate input
+    const validation = validateRequest(loginSchema, body)
+    if (!validation.success) {
+      authLogger.info('Login validation failed', { error: validation.error })
       return NextResponse.json(
-        { error: 'Username and password are required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+
+    const { username, password } = validation.data
 
     // Find user by username
     const user = await prisma.user.findUnique({
@@ -22,6 +35,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!user) {
+      authLogger.info('Login attempt for non-existent user', { username })
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -30,6 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user is active
     if (!user.isActive) {
+      authLogger.warn('Login attempt for disabled account', { username, userId: user.id })
       return NextResponse.json(
         { error: 'Account is disabled' },
         { status: 403 }
@@ -39,6 +54,7 @@ export async function POST(request: NextRequest) {
     // Verify password
     const isValid = await verifyPassword(password, user.password)
     if (!isValid) {
+      authLogger.info('Invalid password attempt', { username })
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
@@ -51,6 +67,8 @@ export async function POST(request: NextRequest) {
       username: user.username,
       role: user.role,
     })
+
+    authLogger.info('User logged in successfully', { username, userId: user.id })
 
     // Create response with user info
     const response = NextResponse.json({
@@ -73,7 +91,7 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('Login error:', error)
+    authLogger.error('Login error', error)
     return NextResponse.json(
       { error: 'Failed to login' },
       { status: 500 }
