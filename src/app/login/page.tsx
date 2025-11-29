@@ -24,6 +24,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(formData),
       })
 
@@ -115,10 +116,7 @@ export default function LoginPage() {
 
           <div className="text-center text-sm text-gray-600">
             <p>
-              Default admin: <strong>admin</strong> / <strong>admin123</strong>
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              (Create admin user if this is your first time)
+              Username: <strong>bspannuasm</strong> | Password: <strong>admin123</strong>
             </p>
           </div>
         </form>
