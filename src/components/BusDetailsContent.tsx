@@ -5,6 +5,7 @@ import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users, CheckC
 import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
 import BusStudentsList from './BusStudentsList'
+import { formatDate, calculateStudentCapacity } from '@/lib/dateUtils'
 
 // Helper component to show expiry status with color coding
 function ExpiryCard({ label, date }: { label: string; date: string | null }) {
@@ -48,7 +49,7 @@ function ExpiryCard({ label, date }: { label: string; date: string | null }) {
         <Icon className={`h-4 w-4 ${iconColor}`} />
       </div>
       <p className={`text-sm font-medium ${textColor}`}>
-        {expiryDate.toLocaleDateString()}
+        {formatDate(expiryDate)}
       </p>
       <p className={`text-xs ${textColor}`}>{statusText}</p>
     </div>
@@ -186,7 +187,7 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           <div>
             <p className="text-sm text-gray-500 mb-1">Purchase Date</p>
             <p className="text-lg font-semibold text-gray-900">
-              {new Date(bus.purchaseDate).toLocaleDateString()}
+              {formatDate(bus.purchaseDate)}
             </p>
           </div>
           <div>
@@ -282,7 +283,7 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
               <p className="text-sm text-gray-500 mb-1">Active Students</p>
               <p className="text-xl font-bold text-gray-900">{bus._count.students}</p>
               <p className="text-xs text-gray-400 mt-1">
-                of {bus.seatingCapacity} capacity
+                of {calculateStudentCapacity(bus.seatingCapacity)} capacity
               </p>
             </div>
             <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">

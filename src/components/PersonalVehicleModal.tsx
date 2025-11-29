@@ -1,6 +1,7 @@
 'use client'
 
 import { X, Car, User, Phone, Fuel, Gauge, MapPin, Calendar, TrendingUp } from 'lucide-react'
+import { formatDate } from '@/lib/dateUtils'
 
 interface PersonalVehicle {
   id: string
@@ -36,14 +37,6 @@ interface PersonalVehicleModalProps {
 }
 
 export default function PersonalVehicleModal({ vehicle, dispenses, onClose }: PersonalVehicleModalProps) {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-  }
-
   // Filter dispenses for this vehicle
   const vehicleDispenses = dispenses.filter(d => d.vehicleId === vehicle.id)
 

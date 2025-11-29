@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Bus, User, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react'
+import { Bus, User, Plus, Edit, Trash2, IndianRupee } from 'lucide-react'
 import AddBusModal from './AddBusModal'
 import EditBusModal from './EditBusModal'
 import { ConfirmModal } from './Modal'
@@ -15,11 +15,15 @@ interface BusData {
   seatingCapacity: number
   purchaseDate: string
   mileage: number
+  fitnessExpiry?: string | null
+  registrationExpiry?: string | null
+  insuranceExpiry?: string | null
   ownershipType?: 'SCHOOL_OWNED' | 'PRIVATE_OWNED'
   privateOwnerName?: string | null
   privateOwnerContact?: string | null
   privateOwnerBank?: string | null
   schoolCommission?: number | null
+  totalExpensesThisYear: number
   primaryDriver: {
     id: string
     name: string
@@ -34,10 +38,16 @@ interface BusData {
       name: string
     }
     conductor: {
+      id: string
       name: string
     } | null
     route: {
+      id: string
       routeName: string
+      startPoint: string
+      endPoint: string
+      totalDistanceKm?: number
+      waypoints?: string | null
     }
   }>
 }
@@ -131,32 +141,31 @@ export default function FleetTable() {
           <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Bus Details
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Ownership
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Owner
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Assigned Driver
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Driver
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Route
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Capacity
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Seats
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Mileage
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Students
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Alerts
+              <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Expenses (Year)
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
+              <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
               </th>
             </tr>
           </thead>
@@ -167,41 +176,41 @@ export default function FleetTable() {
                 onClick={() => router.push(`/fleet/${bus.id}`)}
                 className="hover:bg-gray-50 cursor-pointer"
               >
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-4 py-3 whitespace-nowrap">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 bg-primary-100 rounded-full flex items-center justify-center">
-                      <Bus className="h-5 w-5 text-primary-600" />
+                    <div className="flex-shrink-0 h-9 w-9 bg-primary-100 rounded-full flex items-center justify-center">
+                      <Bus className="h-4 w-4 text-primary-600" />
                     </div>
-                    <div className="ml-4">
+                    <div className="ml-3">
                       <div className="text-sm font-medium text-gray-900">
                         {bus.registrationNumber}
                       </div>
-                      <div className="text-sm text-gray-500">{bus.chassisNumber}</div>
+                      <div className="text-xs text-gray-500">{bus.chassisNumber}</div>
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap">
                   {bus.ownershipType === 'PRIVATE_OWNED' ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                       Private
                     </span>
                   ) : (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       School
                     </span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-3 whitespace-nowrap">
                   {bus.primaryDriver ? (
                     <div className="flex items-center text-sm text-gray-900">
-                      <User className="h-4 w-4 mr-2 text-gray-400" />
+                      <User className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
                       {bus.primaryDriver.name}
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">Not assigned</span>
+                    <span className="text-sm text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                   {bus.busRoutes && bus.busRoutes.length > 0 ? (
                     bus.busRoutes.length === 1 ? (
                       bus.busRoutes[0].route.routeName
@@ -209,37 +218,37 @@ export default function FleetTable() {
                       <span className="text-gray-700">{bus.busRoutes.length} routes</span>
                     )
                   ) : (
-                    <span className="text-gray-400">Not assigned</span>
+                    <span className="text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {bus.seatingCapacity} seats
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
+                  {bus.seatingCapacity}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
                   {bus.mileage > 0 ? (
                     <span className="font-medium text-gray-900">{bus.mileage} km/L</span>
                   ) : (
-                    <span className="text-gray-400">No data</span>
+                    <span className="text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-900 text-center">
                   {bus._count.students > 0 ? (
                     <span className="font-medium">{bus._count.students}</span>
                   ) : (
                     <span className="text-gray-400">0</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {bus._count.reminders > 0 ? (
-                    <div className="flex items-center text-sm text-yellow-600">
-                      <AlertCircle className="h-4 w-4 mr-1" />
-                      {bus._count.reminders}
+                <td className="px-3 py-3 whitespace-nowrap text-right">
+                  {bus.totalExpensesThisYear > 0 ? (
+                    <div className="flex items-center justify-end text-sm text-gray-900">
+                      <IndianRupee className="h-3 w-3 mr-0.5 text-gray-500" />
+                      <span className="font-medium">{bus.totalExpensesThisYear.toLocaleString()}</span>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-400">None</span>
+                    <span className="text-sm text-gray-400">-</span>
                   )}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-2 py-3 whitespace-nowrap">
                   <div className="flex gap-2">
                     <button
                       onClick={(e) => {

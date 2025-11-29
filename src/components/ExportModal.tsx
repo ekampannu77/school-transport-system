@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { X, Download, FileText, Users, Bus as BusIcon } from 'lucide-react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { formatDate, formatDateTime } from '@/lib/dateUtils'
 
 interface ExportModalProps {
   isOpen: boolean
@@ -153,7 +154,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
         doc.text(
-          `Generated on ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
+          `Generated on ${formatDateTime(new Date())} | Page ${i} of ${pageCount}`,
           pageWidth / 2,
           doc.internal.pageSize.height - 10,
           { align: 'center' }
@@ -289,7 +290,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
             expense.bus.registrationNumber,
             expense.category,
             expense.amount.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 }),
-            new Date(expense.date).toLocaleDateString('en-IN'),
+            formatDate(expense.date),
             expense.description || '-'
           ]),
           theme: 'grid',
@@ -304,7 +305,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
         doc.text(
-          `Generated on ${new Date().toLocaleString()} | Page ${i} of ${pageCount}`,
+          `Generated on ${formatDateTime(new Date())} | Page ${i} of ${pageCount}`,
           pageWidth / 2,
           doc.internal.pageSize.height - 10,
           { align: 'center' }

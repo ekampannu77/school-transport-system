@@ -47,6 +47,11 @@ export async function POST(request: NextRequest) {
       privateOwnerContact,
       privateOwnerBank,
       schoolCommission,
+      routeName,
+      startPoint,
+      endPoint,
+      waypoints,
+      totalDistanceKm,
     } = validation.data
 
     // Check if driver is already assigned to another bus
@@ -157,21 +162,35 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Create BusRoute if driver or conductor is assigned
-    if (primaryDriverId || conductorId) {
-      // Get the first route (or create a default one)
-      let defaultRoute = await prisma.route.findFirst()
+    // Create BusRoute if route name is provided or driver/conductor is assigned or waypoints exist
+    if (routeName || primaryDriverId || conductorId || waypoints) {
+      // Create or find the route
+      let route = null
 
-      if (!defaultRoute) {
-        // Create a default route if none exists
-        defaultRoute = await prisma.route.create({
+      if (routeName || waypoints) {
+        // Create a new route with the provided info
+        route = await prisma.route.create({
           data: {
-            routeName: 'Default Route',
-            startPoint: 'School',
-            endPoint: 'Various',
-            totalDistanceKm: 0,
+            routeName: routeName || `Route for ${registrationNumber}`,
+            startPoint: startPoint || routeName || 'Start',
+            endPoint: endPoint || 'School',
+            totalDistanceKm: totalDistanceKm || 0,
+            waypoints: waypoints || null,
           },
         })
+      } else {
+        // Get or create a default route
+        route = await prisma.route.findFirst()
+        if (!route) {
+          route = await prisma.route.create({
+            data: {
+              routeName: 'Default Route',
+              startPoint: 'School',
+              endPoint: 'Various',
+              totalDistanceKm: 0,
+            },
+          })
+        }
       }
 
       await prisma.busRoute.create({
@@ -179,7 +198,7 @@ export async function POST(request: NextRequest) {
           busId: bus.id,
           driverId: primaryDriverId || null,
           conductorId: conductorId || null,
-          routeId: defaultRoute.id,
+          routeId: route.id,
           academicTerm: '2024-25',
           startDate: new Date(),
         },
@@ -237,6 +256,11 @@ export async function PUT(request: NextRequest) {
       privateOwnerContact,
       privateOwnerBank,
       schoolCommission,
+      routeName,
+      startPoint,
+      endPoint,
+      waypoints,
+      totalDistanceKm,
     } = validation.data
 
     // Check if driver is already assigned to another bus
@@ -402,34 +426,60 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Update or create BusRoute if driver or conductor is provided
-    if (primaryDriverId || conductorId) {
-      const existingRoute = await prisma.busRoute.findFirst({
+    // Update or create BusRoute if route name, driver/conductor, or waypoints are provided
+    if (routeName || primaryDriverId || conductorId || waypoints) {
+      const existingBusRoute = await prisma.busRoute.findFirst({
         where: { busId: id },
+        include: { route: true },
       })
 
-      if (existingRoute) {
-        // Update existing route
-        await prisma.busRoute.update({
-          where: { id: existingRoute.id },
+      if (existingBusRoute) {
+        // Update existing route information
+        await prisma.route.update({
+          where: { id: existingBusRoute.route.id },
           data: {
-            driverId: primaryDriverId || existingRoute.driverId,
-            conductorId: conductorId || existingRoute.conductorId,
+            ...(routeName && { routeName }),
+            ...(startPoint && { startPoint }),
+            ...(endPoint && { endPoint }),
+            ...(totalDistanceKm !== undefined && { totalDistanceKm }),
+            ...(waypoints !== undefined && { waypoints }),
+          },
+        })
+
+        // Update driver/conductor in BusRoute
+        await prisma.busRoute.update({
+          where: { id: existingBusRoute.id },
+          data: {
+            driverId: primaryDriverId || existingBusRoute.driverId,
+            conductorId: conductorId || existingBusRoute.conductorId,
           },
         })
       } else {
-        // Create a new route if none exists
-        let defaultRoute = await prisma.route.findFirst()
+        // Create a new route and bus route
+        let route = null
 
-        if (!defaultRoute) {
-          defaultRoute = await prisma.route.create({
+        if (routeName || waypoints) {
+          route = await prisma.route.create({
             data: {
-              routeName: 'Default Route',
-              startPoint: 'School',
-              endPoint: 'Various',
-              totalDistanceKm: 0,
+              routeName: routeName || `Route for ${registrationNumber}`,
+              startPoint: startPoint || routeName || 'Start',
+              endPoint: endPoint || 'School',
+              totalDistanceKm: totalDistanceKm || 0,
+              waypoints: waypoints || null,
             },
           })
+        } else {
+          route = await prisma.route.findFirst()
+          if (!route) {
+            route = await prisma.route.create({
+              data: {
+                routeName: 'Default Route',
+                startPoint: 'School',
+                endPoint: 'Various',
+                totalDistanceKm: 0,
+              },
+            })
+          }
         }
 
         await prisma.busRoute.create({
@@ -437,7 +487,7 @@ export async function PUT(request: NextRequest) {
             busId: id,
             driverId: primaryDriverId || null,
             conductorId: conductorId || null,
-            routeId: defaultRoute.id,
+            routeId: route.id,
             academicTerm: '2024-25',
             startDate: new Date(),
           },

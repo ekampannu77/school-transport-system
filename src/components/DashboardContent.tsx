@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import StatCard from './StatCard'
 import AlertCard from './AlertCard'
-import { Bus, Users, DollarSign, AlertTriangle } from 'lucide-react'
+import { Bus, Users, DollarSign, AlertTriangle, AlertCircle, Info } from 'lucide-react'
 import { ExpiryAlert } from '@/lib/services/alerts'
 
 interface FleetOverview {
@@ -39,7 +39,7 @@ export default function DashboardContent() {
       try {
         const [overviewRes, alertsRes] = await Promise.all([
           fetch('/api/fleet/overview'),
-          fetch('/api/alerts?days=30'),
+          fetch('/api/alerts?days=90'),
         ])
 
         const overviewData = await overviewRes.json()
@@ -72,6 +72,11 @@ export default function DashboardContent() {
     )
   }
 
+  // Group alerts by severity
+  const criticalAlerts = alerts?.alerts.filter(a => a.severity === 'critical') || []
+  const warningAlerts = alerts?.alerts.filter(a => a.severity === 'warning') || []
+  const infoAlerts = alerts?.alerts.filter(a => a.severity === 'info') || []
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -98,37 +103,106 @@ export default function DashboardContent() {
           href="/drivers"
         />
         <StatCard
-          title="Critical Alerts"
-          value={alerts?.criticalCount || 0}
+          title="Pending Alerts"
+          value={(alerts?.criticalCount || 0) + (alerts?.warningCount || 0)}
           icon={AlertTriangle}
-          subtitle={`${alerts?.warningCount || 0} warnings`}
-          href="/alerts"
+          subtitle={`${alerts?.criticalCount || 0} critical, ${alerts?.warningCount || 0} warnings`}
+          href="/"
         />
       </div>
 
-      {/* Alerts Section */}
-      {alerts && alerts.alerts.length > 0 && (
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Alerts</h2>
-          <div className="space-y-3">
-            {alerts.alerts.slice(0, 5).map((alert) => (
-              <AlertCard key={alert.id} alert={alert} />
-            ))}
+      {/* Alerts & Reminders Section */}
+      <div className="card">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Alerts & Reminders</h2>
+          <p className="text-sm text-gray-500 mt-1">Track expiring licenses, insurance, and maintenance schedules</p>
+        </div>
+
+        {/* Alert Summary */}
+        <div className="grid grid-cols-3 divide-x divide-gray-200 bg-gray-50">
+          <div className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              <span className="text-sm font-medium text-gray-600">Critical</span>
+            </div>
+            <p className="text-2xl font-bold text-red-600 mt-1">{alerts?.criticalCount || 0}</p>
           </div>
-          {alerts.alerts.length > 5 && (
-            <div className="mt-4 text-center">
-              <a
-                href="/alerts"
-                className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                View all {alerts.alerts.length} alerts →
-              </a>
+          <div className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <AlertCircle className="h-5 w-5 text-yellow-500" />
+              <span className="text-sm font-medium text-gray-600">Warnings</span>
+            </div>
+            <p className="text-2xl font-bold text-yellow-600 mt-1">{alerts?.warningCount || 0}</p>
+          </div>
+          <div className="p-4 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              <span className="text-sm font-medium text-gray-600">Info</span>
+            </div>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{alerts?.infoCount || 0}</p>
+          </div>
+        </div>
+
+        {/* Alerts List */}
+        <div className="p-6">
+          {alerts && alerts.alerts.length > 0 ? (
+            <div className="space-y-6">
+              {/* Critical Alerts */}
+              {criticalAlerts.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-red-700 mb-3 flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    Critical - Action Required Immediately
+                  </h3>
+                  <div className="space-y-2">
+                    {criticalAlerts.map((alert) => (
+                      <AlertCard key={alert.id} alert={alert} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Warning Alerts */}
+              {warningAlerts.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-yellow-700 mb-3 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    Warnings - Action Required Soon
+                  </h3>
+                  <div className="space-y-2">
+                    {warningAlerts.map((alert) => (
+                      <AlertCard key={alert.id} alert={alert} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Info Alerts */}
+              {infoAlerts.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Information - Upcoming Reminders
+                  </h3>
+                  <div className="space-y-2">
+                    {infoAlerts.map((alert) => (
+                      <AlertCard key={alert.id} alert={alert} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <AlertTriangle className="h-12 w-12 text-gray-300 mx-auto" />
+              <p className="text-gray-500 mt-2">No alerts or reminders</p>
+              <p className="text-sm text-gray-400">All documents and licenses are up to date</p>
             </div>
           )}
         </div>
-      )}
+      </div>
 
-      {/* Quick Stats */}
+      {/* Quick Stats and Actions */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Fleet Status</h2>
@@ -140,10 +214,6 @@ export default function DashboardContent() {
             <div className="flex justify-between items-center">
               <span className="text-sm text-gray-600">Active Drivers/Conductors</span>
               <span className="badge badge-info">{overview?.drivers.active || 0}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Total Routes</span>
-              <span className="badge badge-info">{overview?.routes.total || 0}</span>
             </div>
           </div>
         </div>

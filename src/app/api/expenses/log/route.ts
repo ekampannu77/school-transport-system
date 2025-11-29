@@ -157,3 +157,64 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const expenseId = searchParams.get('id')
+
+    if (!expenseId) {
+      return NextResponse.json(
+        { error: 'Expense ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Find the expense first
+    const expense = await prisma.expense.findUnique({
+      where: { id: expenseId },
+    })
+
+    if (!expense) {
+      return NextResponse.json(
+        { error: 'Expense not found' },
+        { status: 404 }
+      )
+    }
+
+    // Use a transaction to delete expense and related fuel dispense (if applicable)
+    await prisma.$transaction(async (tx) => {
+      // If it's a fuel expense, find and delete the corresponding fuel dispense
+      if (expense.category === 'Fuel' && expense.litresFilled) {
+        // Find the fuel dispense that matches this expense
+        // Match by busId, date, and quantity
+        const fuelDispense = await tx.fuelDispense.findFirst({
+          where: {
+            busId: expense.busId,
+            quantity: expense.litresFilled,
+            date: expense.date,
+          },
+        })
+
+        if (fuelDispense) {
+          await tx.fuelDispense.delete({
+            where: { id: fuelDispense.id },
+          })
+        }
+      }
+
+      // Delete the expense
+      await tx.expense.delete({
+        where: { id: expenseId },
+      })
+    })
+
+    return NextResponse.json({ success: true, message: 'Expense deleted successfully' })
+  } catch (error) {
+    console.error('Error deleting expense:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete expense' },
+      { status: 500 }
+    )
+  }
+}

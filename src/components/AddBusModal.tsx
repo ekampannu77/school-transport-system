@@ -1,8 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import Modal, { Button } from './Modal'
 import { useToast } from './Toast'
+import type { Waypoint } from './RouteMapPicker'
+
+// Dynamic import to avoid SSR issues with Google Maps
+const RouteMapPicker = dynamic(() => import('./RouteMapPicker'), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-gray-100 rounded-lg p-4 h-[300px] flex items-center justify-center">
+      <p className="text-gray-500 text-sm">Loading map...</p>
+    </div>
+  ),
+})
 
 interface AddBusModalProps {
   isOpen: boolean
@@ -31,6 +43,11 @@ const initialFormData = {
   privateOwnerContact: '',
   privateOwnerBank: '',
   schoolCommission: '0',
+  routeName: '',
+  startPoint: '',
+  endPoint: '',
+  waypoints: '',
+  totalDistanceKm: '0',
 }
 
 export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalProps) {
@@ -39,13 +56,43 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
   const [conductors, setConductors] = useState<StaffMember[]>([])
   const [formData, setFormData] = useState(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [routeWaypoints, setRouteWaypoints] = useState<Waypoint[]>([])
   const toast = useToast()
+
+  // Handle waypoints change from map
+  const handleWaypointsChange = (waypoints: Waypoint[], distance: number) => {
+    setRouteWaypoints(waypoints)
+
+    // Auto-generate route name from first and last waypoint
+    let routeName = ''
+    let startPoint = ''
+    let endPoint = ''
+
+    if (waypoints.length >= 1) {
+      startPoint = `Stop 1`
+      routeName = `Route ${waypoints.length} stops`
+    }
+    if (waypoints.length >= 2) {
+      endPoint = `Stop ${waypoints.length}`
+      routeName = `${startPoint} to ${endPoint}`
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      waypoints: JSON.stringify(waypoints),
+      totalDistanceKm: distance.toString(),
+      routeName: routeName || prev.routeName,
+      startPoint: startPoint || prev.startPoint,
+      endPoint: endPoint || prev.endPoint,
+    }))
+  }
 
   useEffect(() => {
     if (isOpen) {
       fetchStaff()
       setFormData(initialFormData)
       setErrors({})
+      setRouteWaypoints([])
     }
   }, [isOpen])
 
@@ -242,6 +289,77 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
                 ))}
               </select>
             </div>
+          </div>
+        </div>
+
+        {/* Route Assignment Section with Map */}
+        <div className="pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Route Information</h3>
+          <p className="text-xs text-gray-500 mb-3">Click on the map to add route stops (optional)</p>
+
+          {/* Map Picker */}
+          <RouteMapPicker
+            waypoints={routeWaypoints}
+            onChange={handleWaypointsChange}
+          />
+
+          {/* Route Name - can be auto-generated or manually entered */}
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Route Name
+              </label>
+              <input
+                type="text"
+                value={formData.routeName}
+                onChange={(e) =>
+                  setFormData({ ...formData, routeName: e.target.value })
+                }
+                className="input-field"
+                placeholder="Auto-generated from map or enter manually"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Start Point
+                </label>
+                <input
+                  type="text"
+                  value={formData.startPoint}
+                  onChange={(e) =>
+                    setFormData({ ...formData, startPoint: e.target.value })
+                  }
+                  className="input-field"
+                  placeholder="e.g., Village Name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  End Point
+                </label>
+                <input
+                  type="text"
+                  value={formData.endPoint}
+                  onChange={(e) =>
+                    setFormData({ ...formData, endPoint: e.target.value })
+                  }
+                  className="input-field"
+                  placeholder="e.g., School"
+                />
+              </div>
+            </div>
+
+            {/* Distance display */}
+            {parseFloat(formData.totalDistanceKm) > 0 && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800">
+                  <span className="font-medium">Total Distance:</span> {formData.totalDistanceKm} km
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

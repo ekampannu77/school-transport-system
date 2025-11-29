@@ -2,32 +2,57 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createPaymentSchema, validateRequest } from '@/lib/validations'
 import { paymentLogger } from '@/lib/logger'
+import { withRateLimit, API_RATE_LIMIT } from '@/lib/rate-limit'
 
-// Helper function to generate unique receipt number
-async function generateReceiptNumber(): Promise<string> {
+// Helper function to generate unique receipt number with retry for race conditions
+async function generateReceiptNumber(maxRetries = 3): Promise<string> {
   const year = new Date().getFullYear()
 
-  // Get the latest payment to determine next sequential number
-  const latestPayment = await prisma.payment.findFirst({
-    orderBy: { createdAt: 'desc' },
-    select: { receiptNumber: true },
-  })
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    // Get the latest payment to determine next sequential number
+    const latestPayment = await prisma.payment.findFirst({
+      orderBy: { createdAt: 'desc' },
+      select: { receiptNumber: true },
+    })
 
-  let nextNumber = 1
-  if (latestPayment && latestPayment.receiptNumber) {
-    // Extract number from format RCPT-2025-00001
-    const match = latestPayment.receiptNumber.match(/RCPT-\d+-(\d+)/)
-    if (match) {
-      nextNumber = parseInt(match[1]) + 1
+    let nextNumber = 1
+    if (latestPayment && latestPayment.receiptNumber) {
+      // Extract number from format RCPT-2025-00001
+      const match = latestPayment.receiptNumber.match(/RCPT-\d+-(\d+)/)
+      if (match) {
+        nextNumber = parseInt(match[1]) + 1
+      }
+    }
+
+    const receiptNumber = `RCPT-${year}-${String(nextNumber).padStart(5, '0')}`
+
+    // Check if this receipt number already exists (race condition check)
+    const existing = await prisma.payment.findFirst({
+      where: { receiptNumber },
+      select: { id: true },
+    })
+
+    if (!existing) {
+      return receiptNumber
+    }
+
+    // If exists, retry with a small delay
+    if (attempt < maxRetries - 1) {
+      await new Promise(resolve => setTimeout(resolve, 50 * (attempt + 1)))
     }
   }
 
-  // Format: RCPT-2025-00001
-  return `RCPT-${year}-${String(nextNumber).padStart(5, '0')}`
+  // Fallback: use timestamp-based unique number
+  const timestamp = Date.now()
+  return `RCPT-${year}-${timestamp}`
 }
 
 // POST - Collect payment
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = withRateLimit(request, API_RATE_LIMIT)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
 

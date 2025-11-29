@@ -5,6 +5,7 @@ import { Plus, Trash2, Car, Fuel, User, Eye, Edit2, X, Calendar, Filter } from '
 import PersonalVehicleModal from '@/components/PersonalVehicleModal'
 import { useToast } from '@/components/Toast'
 import { Button } from '@/components/Modal'
+import { formatDate } from '@/lib/dateUtils'
 
 interface PersonalVehicle {
   id: string
@@ -322,14 +323,6 @@ export default function PersonalVehiclesPage() {
 
   const clearDateFilter = () => {
     setDateFilter({ startDate: '', endDate: '' })
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
   }
 
   if (loading) {

@@ -1,11 +1,22 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Users, Plus, Trash2, MapPin, Phone, Edit, DollarSign, Receipt } from 'lucide-react'
+import { Users, Plus, Trash2, MapPin, Phone, Edit, DollarSign, Receipt, UserMinus, UserPlus } from 'lucide-react'
 import AddStudentModal from './AddStudentModal'
 import EditStudentModal from './EditStudentModal'
 import CollectPaymentModal from './CollectPaymentModal'
 import PaymentHistoryModal from './PaymentHistoryModal'
+import StudentStatusModal from './StudentStatusModal'
+import { formatDate, calculateStudentCapacity } from '@/lib/dateUtils'
+
+interface StatusHistory {
+  id: string
+  status: string
+  startDate: string
+  endDate: string | null
+  reason: string | null
+  createdAt: string
+}
 
 interface Student {
   id: string
@@ -42,6 +53,10 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showPaymentHistory, setShowPaymentHistory] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
+  const [showStatusModal, setShowStatusModal] = useState(false)
+  const [statusModalStudent, setStatusModalStudent] = useState<Student | null>(null)
+  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
 
   useEffect(() => {
     fetchStudents()
@@ -49,14 +64,17 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch(`/api/students?busId=${busId}`)
-      const data = await response.json()
+      const response = await fetch(`/api/students?busId=${busId}&pageSize=500`)
+      const result = await response.json()
 
-      // Ensure data is an array before setting students
-      if (Array.isArray(data)) {
-        setStudents(data)
+      // Handle paginated response format { data: [...], pagination: {...} }
+      if (result.data && Array.isArray(result.data)) {
+        setStudents(result.data)
+      } else if (Array.isArray(result)) {
+        // Fallback for direct array response
+        setStudents(result)
       } else {
-        console.error('API returned non-array data:', data)
+        console.error('API returned unexpected data format:', result)
         setStudents([])
       }
     } catch (error) {
@@ -72,58 +90,57 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     setShowEditModal(true)
   }
 
-  const handleMarkInactive = async (studentId: string, studentName: string) => {
-    if (!confirm(`Mark ${studentName} as stopped using the bus?`)) {
-      return
-    }
+  const openStatusModal = async (student: Student) => {
+    setStatusModalStudent(student)
+    setShowStatusModal(true)
+    setLoadingHistory(true)
 
-    setDeletingId(studentId)
+    // Always fetch status history for this student
     try {
-      const response = await fetch(`/api/students/${studentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          isActive: false,
-          endDate: new Date().toISOString(),
-        }),
-      })
-
+      const response = await fetch(`/api/students/${student.id}/status`)
       if (response.ok) {
-        fetchStudents()
-      } else {
-        alert('Failed to update student')
+        const history = await response.json()
+        setStatusHistory(history)
       }
     } catch (error) {
-      console.error('Error updating student:', error)
-      alert('Failed to update student')
+      console.error('Error fetching status history:', error)
     } finally {
-      setDeletingId(null)
+      setLoadingHistory(false)
     }
   }
 
-  const handleMarkActive = async (studentId: string) => {
-    setDeletingId(studentId)
+  const handleStatusChange = async (data: { date: string; reason?: string }) => {
+    if (!statusModalStudent) return
+
+    const isActivating = !statusModalStudent.isActive
+
     try {
-      const response = await fetch(`/api/students/${studentId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/students/${statusModalStudent.id}/status`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          isActive: true,
-          endDate: null,
+          isActive: isActivating,
+          date: data.date,
+          reason: data.reason,
         }),
       })
 
       if (response.ok) {
         fetchStudents()
       } else {
-        alert('Failed to update student')
+        const errorData = await response.json()
+        alert(errorData.error || 'Failed to update student status')
       }
     } catch (error) {
-      console.error('Error updating student:', error)
-      alert('Failed to update student')
-    } finally {
-      setDeletingId(null)
+      console.error('Error updating student status:', error)
+      alert('Failed to update student status')
     }
+  }
+
+  const closeStatusModal = () => {
+    setShowStatusModal(false)
+    setStatusModalStudent(null)
+    setStatusHistory([])
   }
 
   const handleDelete = async (studentId: string, studentName: string) => {
@@ -224,8 +241,9 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
   const activeStudents = students.filter(s => s.isActive)
   const inactiveStudents = students.filter(s => !s.isActive)
   const displayStudents = showInactive ? students : activeStudents
-  const availableSeats = seatingCapacity - activeStudents.length
-  const occupancyPercentage = Math.round((activeStudents.length / seatingCapacity) * 100)
+  const studentCapacity = calculateStudentCapacity(seatingCapacity)
+  const availableSeats = studentCapacity - activeStudents.length
+  const occupancyPercentage = Math.round((activeStudents.length / studentCapacity) * 100)
 
   if (loading) {
     return (
@@ -247,7 +265,7 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
           <div>
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
               <Users className="h-5 w-5 mr-2" />
-              Students ({activeStudents.length}/{seatingCapacity})
+              Students ({activeStudents.length}/{studentCapacity})
             </h3>
             <p className="text-sm text-gray-500 mt-1">
               {availableSeats > 0 ? (
@@ -399,11 +417,11 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                       <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-xs text-gray-900">
                           <div className="text-green-600">
-                            {new Date(student.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                            {formatDate(student.startDate)}
                           </div>
                           {student.endDate && (
                             <div className="text-red-600">
-                              {new Date(student.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                              {formatDate(student.endDate)}
                             </div>
                           )}
                         </div>
@@ -450,6 +468,13 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                             title="Edit student"
                           >
                             <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => openStatusModal(student)}
+                            className={`p-1 ${student.isActive ? 'text-amber-600 hover:text-amber-900' : 'text-green-600 hover:text-green-900'}`}
+                            title={student.isActive ? 'Mark inactive' : 'Reactivate'}
+                          >
+                            {student.isActive ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
                           </button>
                           <button
                             onClick={() => handleDelete(student.id, student.name)}
@@ -505,6 +530,18 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
             onClose={() => setShowPaymentHistory(false)}
           />
         </>
+      )}
+
+      {statusModalStudent && (
+        <StudentStatusModal
+          isOpen={showStatusModal}
+          onClose={closeStatusModal}
+          onConfirm={handleStatusChange}
+          studentName={statusModalStudent.name}
+          currentStatus={statusModalStudent.isActive}
+          statusHistory={statusHistory}
+          loading={loadingHistory}
+        />
       )}
     </>
   )

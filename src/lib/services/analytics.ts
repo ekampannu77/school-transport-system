@@ -187,6 +187,78 @@ export async function getAllBusesCostPerMile() {
 }
 
 /**
+ * Calculate fuel efficiency for all buses in a single optimized query
+ * This avoids N+1 query problem by fetching all fuel data at once
+ */
+export async function calculateFuelEfficiencyBatch(busIds: string[]): Promise<Map<string, {
+  kmPerLitre: number
+  totalDistance: number
+  totalLitres: number
+  fuelRecordsCount: number
+}>> {
+  // Get all fuel expenses for all buses in one query
+  const allFuelExpenses = await prisma.expense.findMany({
+    where: {
+      busId: { in: busIds },
+      category: ExpenseCategory.Fuel,
+      odometerReading: { not: null },
+      litresFilled: { not: null },
+    },
+    orderBy: [
+      { busId: 'asc' },
+      { date: 'asc' },
+    ],
+  })
+
+  // Group expenses by busId
+  const expensesByBus = new Map<string, typeof allFuelExpenses>()
+  for (const expense of allFuelExpenses) {
+    if (!expensesByBus.has(expense.busId)) {
+      expensesByBus.set(expense.busId, [])
+    }
+    expensesByBus.get(expense.busId)!.push(expense)
+  }
+
+  // Calculate efficiency for each bus
+  const results = new Map<string, {
+    kmPerLitre: number
+    totalDistance: number
+    totalLitres: number
+    fuelRecordsCount: number
+  }>()
+
+  for (const busId of busIds) {
+    const fuelExpenses = expensesByBus.get(busId) || []
+
+    if (fuelExpenses.length < 2) {
+      results.set(busId, {
+        kmPerLitre: 0,
+        totalDistance: 0,
+        totalLitres: 0,
+        fuelRecordsCount: fuelExpenses.length,
+      })
+      continue
+    }
+
+    const firstReading = fuelExpenses[0].odometerReading!
+    const lastReading = fuelExpenses[fuelExpenses.length - 1].odometerReading!
+    const totalDistance = lastReading - firstReading
+
+    const totalLitres = fuelExpenses.reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
+    const kmPerLitre = totalDistance > 0 && totalLitres > 0 ? totalDistance / totalLitres : 0
+
+    results.set(busId, {
+      kmPerLitre: parseFloat(kmPerLitre.toFixed(2)),
+      totalDistance,
+      totalLitres: parseFloat(totalLitres.toFixed(2)),
+      fuelRecordsCount: fuelExpenses.length,
+    })
+  }
+
+  return results
+}
+
+/**
  * Aggregate expenses by category for a specific period
  */
 export async function aggregateExpensesByCategory(
