@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       await prisma.reminder.create({
         data: {
           busId: bus.id,
-          type: 'Insurance',
+          type: 'Insurance_Renewal',
           dueDate: new Date(insuranceExpiry),
           status: 'Pending',
           notes: 'Vehicle insurance expiring soon',
@@ -376,7 +376,7 @@ export async function PUT(request: NextRequest) {
       const existingReminder = await prisma.reminder.findFirst({
         where: {
           busId: id,
-          type: 'Insurance',
+          type: 'Insurance_Renewal',
         },
       })
 
@@ -392,7 +392,7 @@ export async function PUT(request: NextRequest) {
         await prisma.reminder.create({
           data: {
             busId: id,
-            type: 'Insurance',
+            type: 'Insurance_Renewal',
             dueDate: new Date(insuranceExpiry),
             status: 'Pending',
             notes: 'Vehicle insurance expiring soon',
