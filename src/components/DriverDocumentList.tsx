@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { FileText, Calendar, AlertCircle, Trash2, Eye, X } from 'lucide-react'
+import { formatDate } from '@/lib/dateUtils'
 
 interface Document {
   id: string
@@ -128,7 +129,7 @@ export default function DriverDocumentList({ driverId }: { driverId: string }) {
                             : isExpiringSoon(doc.expiryDate)
                             ? 'Expires:'
                             : 'Valid until:'}{' '}
-                          {new Date(doc.expiryDate).toLocaleDateString()}
+                          {formatDate(doc.expiryDate)}
                         </span>
                         {(isExpired(doc.expiryDate) || isExpiringSoon(doc.expiryDate)) && (
                           <AlertCircle
@@ -143,7 +144,7 @@ export default function DriverDocumentList({ driverId }: { driverId: string }) {
                       <p className="text-xs text-gray-500 mt-1">{doc.notes}</p>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      Uploaded {new Date(doc.createdAt).toLocaleDateString()}
+                      Uploaded {formatDate(doc.createdAt)}
                     </p>
                   </div>
                 </div>

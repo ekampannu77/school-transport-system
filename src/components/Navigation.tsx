@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
-import { Bus, DollarSign, AlertTriangle, Home, User, MapPin, FileText, Wallet, Users, Fuel, ChevronDown, Car } from 'lucide-react'
+import { Bus, DollarSign, Home, User, FileText, Wallet, Users, Fuel, ChevronDown, Car } from 'lucide-react'
 import ExportModal from './ExportModal'
 
 interface DropdownItem {
@@ -97,7 +97,6 @@ export default function Navigation() {
       items: [
         { href: '/fleet', label: 'Buses', icon: Bus },
         { href: '/drivers', label: 'Drivers', icon: User },
-        { href: '/routes', label: 'Routes', icon: MapPin },
       ]
     },
     {
@@ -116,17 +115,14 @@ export default function Navigation() {
       href: '/private-buses'
     },
     {
-      label: 'Finance',
+      label: 'Fees',
       icon: Wallet,
-      items: [
-        { href: '/fees', label: 'Fees', icon: Wallet },
-        { href: '/expenses', label: 'Expenses', icon: DollarSign },
-      ]
+      href: '/fees'
     },
     {
-      label: 'Alerts',
-      icon: AlertTriangle,
-      href: '/alerts'
+      label: 'Expenses',
+      icon: DollarSign,
+      href: '/expenses'
     },
   ]
 
@@ -141,13 +137,11 @@ export default function Navigation() {
     { href: '/', label: 'Dashboard', icon: Home },
     { href: '/fleet', label: 'Buses', icon: Bus },
     { href: '/drivers', label: 'Drivers', icon: User },
-    { href: '/routes', label: 'Routes', icon: MapPin },
     { href: '/fees', label: 'Fees', icon: Wallet },
     { href: '/private-buses', label: 'Private Buses', icon: Users },
     { href: '/expenses', label: 'Expenses', icon: DollarSign },
     { href: '/fuel-inventory', label: 'Fuel', icon: Fuel },
     { href: '/personal-vehicles', label: 'Personal Vehicles', icon: Car },
-    { href: '/alerts', label: 'Alerts', icon: AlertTriangle },
   ]
 
   return (

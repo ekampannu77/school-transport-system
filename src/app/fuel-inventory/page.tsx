@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, TrendingUp, TrendingDown, Droplet, AlertTriangle, Car, Fuel, Calendar, Filter, X } from 'lucide-react'
 import { useToast } from '@/components/Toast'
 import { Button } from '@/components/Modal'
+import { formatDate } from '@/lib/dateUtils'
 
 interface FuelPurchase {
   id: string
@@ -167,14 +168,6 @@ export default function FuelInventoryPage() {
       currency: 'INR',
       maximumFractionDigits: 2,
     }).format(amount)
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
   }
 
   if (loading) {

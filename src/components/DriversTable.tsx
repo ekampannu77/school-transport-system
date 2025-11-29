@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { User, Plus, Edit, Trash2, Phone, MapPin, AlertCircle } from 'lucide-react'
 import AddDriverModal from './AddDriverModal'
 import EditDriverModal from './EditDriverModal'
+import { formatDate } from '@/lib/dateUtils'
 
 interface DriverData {
   id: string
@@ -187,7 +188,7 @@ export default function DriversTable() {
                     {driver.licenseExpiry ? (
                       <div className="text-sm">
                         <div className={isLicenseExpiringSoon(driver.licenseExpiry) ? 'text-yellow-600 font-medium' : 'text-gray-900'}>
-                          {new Date(driver.licenseExpiry).toLocaleDateString()}
+                          {formatDate(driver.licenseExpiry)}
                         </div>
                         {isLicenseExpiringSoon(driver.licenseExpiry) && (
                           <div className="flex items-center text-xs text-yellow-600 mt-1">

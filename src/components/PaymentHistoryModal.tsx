@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Receipt } from 'lucide-react'
+import { formatDate } from '@/lib/dateUtils'
 
 interface Payment {
   id: string
@@ -62,14 +63,6 @@ export default function PaymentHistoryModal({ student, isOpen, onClose }: Paymen
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    })
   }
 
   const getPaymentMethodDisplay = (method: string) => {

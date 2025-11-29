@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Calendar, AlertCircle, Bell, Save } from 'lucide-react'
+import { formatDate, formatDateForInput } from '@/lib/dateUtils'
 
 interface LicenseTrackerProps {
   driverId: string
@@ -19,10 +20,10 @@ export default function LicenseTracker({
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     licenseExpiry: licenseExpiry
-      ? new Date(licenseExpiry).toISOString().split('T')[0]
+      ? formatDateForInput(licenseExpiry)
       : '',
     licenseReminder: licenseReminder
-      ? new Date(licenseReminder).toISOString().split('T')[0]
+      ? formatDateForInput(licenseReminder)
       : '',
   })
 
@@ -107,7 +108,7 @@ export default function LicenseTracker({
                     : 'License Valid'}
                 </h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  Expiry Date: {new Date(licenseExpiry).toLocaleDateString()}
+                  Expiry Date: {formatDate(licenseExpiry)}
                 </p>
                 {daysUntilExpiry !== null && (
                   <p className="text-sm text-gray-600">
@@ -125,7 +126,7 @@ export default function LicenseTracker({
                 <div className="text-sm">
                   <p className="font-medium text-blue-900">Reminder Set</p>
                   <p className="text-blue-700">
-                    You'll be reminded on {new Date(licenseReminder).toLocaleDateString()}
+                    You'll be reminded on {formatDate(licenseReminder)}
                   </p>
                 </div>
               </div>

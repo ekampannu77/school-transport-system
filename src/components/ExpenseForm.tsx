@@ -1,17 +1,29 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload } from 'lucide-react'
+import { Upload, Fuel, AlertCircle, Clock } from 'lucide-react'
+import { calculateDaysRemaining } from '@/lib/dateUtils'
 
 interface Bus {
   id: string
   registrationNumber: string
 }
 
+interface FuelInfo {
+  currentStock: number
+  lastDispense: {
+    date: string
+    quantity: number
+    daysAgo: number
+  } | null
+}
+
 export default function ExpenseForm() {
   const [buses, setBuses] = useState<Bus[]>([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [fuelInfo, setFuelInfo] = useState<FuelInfo | null>(null)
+  const [loadingFuelInfo, setLoadingFuelInfo] = useState(false)
   const [formData, setFormData] = useState({
     busId: '',
     category: 'Fuel',
@@ -36,6 +48,52 @@ export default function ExpenseForm() {
     }
     fetchBuses()
   }, [])
+
+  // Fetch fuel inventory and last dispense when Fuel category is selected or bus changes
+  useEffect(() => {
+    async function fetchFuelInfo() {
+      if (formData.category !== 'Fuel') {
+        setFuelInfo(null)
+        return
+      }
+
+      setLoadingFuelInfo(true)
+      try {
+        // Fetch fuel inventory
+        const inventoryRes = await fetch('/api/fuel/inventory')
+        const inventoryData = await inventoryRes.json()
+
+        let lastDispense = null
+
+        // Fetch last dispense for selected bus
+        if (formData.busId) {
+          const dispensesRes = await fetch(`/api/fuel/dispenses?busId=${formData.busId}`)
+          const dispensesData = await dispensesRes.json()
+
+          if (dispensesData.length > 0) {
+            const latestDispense = dispensesData[0] // Already sorted by date desc
+            const daysAgo = Math.abs(calculateDaysRemaining(latestDispense.date))
+            lastDispense = {
+              date: latestDispense.date,
+              quantity: latestDispense.quantity,
+              daysAgo,
+            }
+          }
+        }
+
+        setFuelInfo({
+          currentStock: inventoryData.currentStock || 0,
+          lastDispense,
+        })
+      } catch (error) {
+        console.error('Error fetching fuel info:', error)
+      } finally {
+        setLoadingFuelInfo(false)
+      }
+    }
+
+    fetchFuelInfo()
+  }, [formData.category, formData.busId])
 
   // Auto-calculate amount for fuel expenses
   useEffect(() => {
@@ -158,6 +216,69 @@ export default function ExpenseForm() {
             <option value="Other">Other</option>
           </select>
         </div>
+
+        {/* Fuel Info Panel - shows when Fuel category is selected */}
+        {formData.category === 'Fuel' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-2 text-blue-800 font-medium">
+              <Fuel className="h-5 w-5" />
+              <span>Fuel Inventory Info</span>
+            </div>
+
+            {loadingFuelInfo ? (
+              <div className="text-sm text-blue-600">Loading fuel information...</div>
+            ) : fuelInfo ? (
+              <div className="space-y-2">
+                {/* Available Stock */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Available in Stock:</span>
+                  <span className={`font-semibold ${fuelInfo.currentStock > 50 ? 'text-green-600' : fuelInfo.currentStock > 20 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    {fuelInfo.currentStock.toFixed(2)} litres
+                  </span>
+                </div>
+
+                {/* Low Stock Warning */}
+                {fuelInfo.currentStock < 50 && (
+                  <div className="flex items-center gap-2 text-amber-600 text-sm">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Low fuel stock! Consider purchasing more.</span>
+                  </div>
+                )}
+
+                {/* Last Dispense Info - only when bus is selected */}
+                {formData.busId && fuelInfo.lastDispense && (
+                  <div className="pt-2 border-t border-blue-200">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        Last dispensed: <strong>{fuelInfo.lastDispense.quantity} litres</strong>,{' '}
+                        <strong className={fuelInfo.lastDispense.daysAgo > 7 ? 'text-orange-600' : 'text-gray-900'}>
+                          {fuelInfo.lastDispense.daysAgo === 0
+                            ? 'today'
+                            : fuelInfo.lastDispense.daysAgo === 1
+                              ? '1 day ago'
+                              : `${fuelInfo.lastDispense.daysAgo} days ago`}
+                        </strong>
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {formData.busId && !fuelInfo.lastDispense && (
+                  <div className="pt-2 border-t border-blue-200 text-sm text-gray-500">
+                    No previous fuel dispense records for this bus.
+                  </div>
+                )}
+
+                {!formData.busId && (
+                  <div className="text-sm text-blue-600 italic">
+                    Select a bus to see its last dispense info.
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </div>
+        )}
 
         {formData.category === 'Fuel' ? (
           <>

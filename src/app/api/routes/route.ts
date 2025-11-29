@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createRouteSchema, updateRouteSchema, validateRequest, idParamSchema } from '@/lib/validations'
+import { withRateLimit, API_RATE_LIMIT } from '@/lib/rate-limit'
 
 export async function GET() {
   try {
@@ -40,17 +42,26 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = withRateLimit(request, API_RATE_LIMIT)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
-    const { routeName, startPoint, endPoint, distance } = body
 
-    // Validation
-    if (!routeName || !startPoint || !endPoint || !distance) {
+    // Validate input with Zod
+    const validation = validateRequest(createRouteSchema, {
+      ...body,
+      totalDistanceKm: body.distance || body.totalDistanceKm,
+    })
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+
+    const { routeName, startPoint, endPoint, totalDistanceKm } = validation.data
 
     // Create new route
     const route = await prisma.route.create({
@@ -58,7 +69,7 @@ export async function POST(request: NextRequest) {
         routeName,
         startPoint,
         endPoint,
-        totalDistanceKm: parseFloat(distance),
+        totalDistanceKm: totalDistanceKm || 0,
       },
     })
 
@@ -82,25 +93,35 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = withRateLimit(request, API_RATE_LIMIT)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const body = await request.json()
-    const { id, routeName, startPoint, endPoint, distance } = body
 
-    if (!id) {
+    // Validate input with Zod
+    const validation = validateRequest(updateRouteSchema, {
+      ...body,
+      totalDistanceKm: body.distance || body.totalDistanceKm,
+    })
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Route ID is required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+
+    const { id, routeName, startPoint, endPoint, totalDistanceKm } = validation.data
 
     // Update route
     const route = await prisma.route.update({
       where: { id },
       data: {
-        routeName,
-        startPoint,
-        endPoint,
-        totalDistanceKm: parseFloat(distance),
+        ...(routeName && { routeName }),
+        ...(startPoint && { startPoint }),
+        ...(endPoint && { endPoint }),
+        ...(totalDistanceKm !== undefined && { totalDistanceKm }),
       },
     })
 
@@ -130,19 +151,25 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  // Rate limiting
+  const rateLimitResponse = withRateLimit(request, API_RATE_LIMIT)
+  if (rateLimitResponse) return rateLimitResponse
+
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
-    if (!id) {
+    // Validate ID format
+    const validation = validateRequest(idParamSchema, { id })
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Route ID is required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
     await prisma.route.delete({
-      where: { id },
+      where: { id: validation.data.id },
     })
 
     return NextResponse.json({ message: 'Route deleted successfully' })

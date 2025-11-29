@@ -80,12 +80,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Set cookie on response
+    // Set cookie on response (aligned with JWT expiry of 1 day)
     response.cookies.set('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24, // 1 day - matches JWT expiry
       path: '/',
     })
 

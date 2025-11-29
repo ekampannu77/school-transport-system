@@ -1,6 +1,7 @@
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react'
 import { ExpiryAlert } from '@/lib/services/alerts'
 import Link from 'next/link'
+import { formatDate } from '@/lib/dateUtils'
 
 interface AlertCardProps {
   alert: ExpiryAlert
@@ -53,8 +54,7 @@ export default function AlertCard({ alert, onResolve }: AlertCardProps) {
         <h3 className={`text-sm font-medium ${config.textColor}`}>{alert.message}</h3>
         <div className="mt-2 text-sm text-gray-600">
           <p>
-            Due: {new Date(alert.dueDate).toLocaleDateString()} ({alert.daysRemaining} days
-            remaining)
+            Due: {formatDate(alert.dueDate)} ({alert.daysRemaining} days remaining)
           </p>
         </div>
       </div>

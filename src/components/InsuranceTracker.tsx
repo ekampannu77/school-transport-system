@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Calendar, AlertCircle, Bell, Save } from 'lucide-react'
+import { formatDate, formatDateForInput } from '@/lib/dateUtils'
 
 interface InsuranceTrackerProps {
   busId: string
@@ -19,10 +20,10 @@ export default function InsuranceTracker({
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     insuranceExpiry: insuranceExpiry
-      ? new Date(insuranceExpiry).toISOString().split('T')[0]
+      ? formatDateForInput(insuranceExpiry)
       : '',
     insuranceReminder: insuranceReminder
-      ? new Date(insuranceReminder).toISOString().split('T')[0]
+      ? formatDateForInput(insuranceReminder)
       : '',
   })
 
@@ -107,7 +108,7 @@ export default function InsuranceTracker({
                     : 'Insurance Active'}
                 </h4>
                 <p className="text-sm text-gray-600 mt-1">
-                  Expiry Date: {new Date(insuranceExpiry).toLocaleDateString()}
+                  Expiry Date: {formatDate(insuranceExpiry)}
                 </p>
                 {daysUntilExpiry !== null && (
                   <p className="text-sm text-gray-600">
@@ -125,7 +126,7 @@ export default function InsuranceTracker({
                 <div className="text-sm">
                   <p className="font-medium text-blue-900">Reminder Set</p>
                   <p className="text-blue-700">
-                    You'll be reminded on {new Date(insuranceReminder).toLocaleDateString()}
+                    You'll be reminded on {formatDate(insuranceReminder)}
                   </p>
                 </div>
               </div>

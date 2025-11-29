@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { FileText, Calendar, Trash2, Eye, AlertCircle, X } from 'lucide-react'
+import { formatDate } from '@/lib/dateUtils'
 
 interface Document {
   id: string
@@ -122,12 +123,12 @@ export default function BusDocumentList({ busId }: { busId: string }) {
                   <div className="flex items-center gap-4 text-xs text-gray-500">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      Uploaded: {new Date(doc.createdAt).toLocaleDateString()}
+                      Uploaded: {formatDate(doc.createdAt)}
                     </div>
                     {doc.expiryDate && (
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
-                        Expires: {new Date(doc.expiryDate).toLocaleDateString()}
+                        Expires: {formatDate(doc.expiryDate)}
                       </div>
                     )}
                   </div>

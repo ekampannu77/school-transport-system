@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { formatDateForInput } from '@/lib/dateUtils'
 
 interface Student {
   id: string
@@ -49,7 +50,7 @@ export default function EditStudentModal({ student, isOpen, onClose, onSuccess }
         parentName: student.parentName,
         parentContact: student.parentContact,
         emergencyContact: student.emergencyContact || '',
-        startDate: student.startDate.split('T')[0],
+        startDate: formatDateForInput(student.startDate),
       })
     }
   }, [student])

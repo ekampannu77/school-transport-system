@@ -1,6 +1,7 @@
 'use client'
 
 import { DollarSign, Gauge, Users, AlertCircle, TrendingUp, Calendar, FileText } from 'lucide-react'
+import { formatDate, calculateStudentCapacity } from '@/lib/dateUtils'
 
 interface BusOverviewProps {
   bus: {
@@ -109,7 +110,7 @@ export default function BusOverview({ bus }: BusOverviewProps) {
               <p className="text-sm text-gray-500 mb-1">Active Students</p>
               <p className="text-2xl font-bold text-gray-900">{bus._count.students}</p>
               <p className="text-xs text-gray-400 mt-1">
-                of {bus.seatingCapacity} capacity
+                of {calculateStudentCapacity(bus.seatingCapacity)} capacity
               </p>
             </div>
             <div className="h-12 w-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -216,7 +217,7 @@ export default function BusOverview({ bus }: BusOverviewProps) {
                         {expense.category}
                       </span>
                       <span className="text-xs text-gray-500">
-                        {new Date(expense.date).toLocaleDateString()}
+                        {formatDate(expense.date)}
                       </span>
                     </div>
                     {expense.description && (
@@ -263,7 +264,7 @@ export default function BusOverview({ bus }: BusOverviewProps) {
                     )}
                     <p className="text-xs text-gray-500 mt-2 flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
-                      Due: {new Date(reminder.dueDate).toLocaleDateString()}
+                      Due: {formatDate(reminder.dueDate)}
                     </p>
                   </div>
                 </div>
@@ -291,7 +292,7 @@ export default function BusOverview({ bus }: BusOverviewProps) {
           <div>
             <p className="text-sm text-gray-500 mb-1">Purchase Date</p>
             <p className="text-base font-medium text-gray-900">
-              {new Date(bus.purchaseDate).toLocaleDateString()}
+              {formatDate(bus.purchaseDate)}
             </p>
           </div>
           <div>

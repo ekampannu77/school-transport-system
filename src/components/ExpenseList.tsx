@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { DollarSign, Calendar, FileText, X } from 'lucide-react'
+import { DollarSign, Calendar, FileText, X, Trash2 } from 'lucide-react'
+import { formatDate } from '@/lib/dateUtils'
 
 interface Expense {
   id: string
@@ -22,6 +23,8 @@ export default function ExpenseList() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedReceipt, setSelectedReceipt] = useState<string | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     async function fetchExpenses() {
@@ -39,6 +42,29 @@ export default function ExpenseList() {
 
     fetchExpenses()
   }, [])
+
+  const handleDelete = async (expenseId: string) => {
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/expenses/log?id=${expenseId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Remove the expense from local state
+        setExpenses(expenses.filter((e) => e.id !== expenseId))
+        setDeleteConfirm(null)
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to delete expense')
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert('Error deleting expense')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -89,7 +115,7 @@ export default function ExpenseList() {
                 <div className="flex items-center gap-4 text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {new Date(expense.date).toLocaleDateString()}
+                    {formatDate(expense.date)}
                   </div>
                   {expense.litresFilled && expense.category === 'Fuel' && (
                     <div>
@@ -110,13 +136,51 @@ export default function ExpenseList() {
                   )}
                 </div>
               </div>
-              <div className="ml-4 flex items-center">
-                <DollarSign className="h-4 w-4 text-gray-400 mr-1" />
-                <span className="text-lg font-semibold text-gray-900">
-                  ₹{expense.amount.toLocaleString()}
-                </span>
+              <div className="ml-4 flex items-center gap-3">
+                <div className="flex items-center">
+                  <DollarSign className="h-4 w-4 text-gray-400 mr-1" />
+                  <span className="text-lg font-semibold text-gray-900">
+                    ₹{expense.amount.toLocaleString()}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setDeleteConfirm(expense.id)}
+                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                  title="Delete expense"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
+
+            {/* Delete Confirmation */}
+            {deleteConfirm === expense.id && (
+              <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between bg-red-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
+                <p className="text-sm text-red-800">
+                  {expense.category === 'Fuel' ? (
+                    <>Delete this expense? <strong>{expense.litresFilled} litres</strong> will be returned to inventory.</>
+                  ) : (
+                    'Are you sure you want to delete this expense?'
+                  )}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                    disabled={deleting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDelete(expense.id)}
+                    className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                    disabled={deleting}
+                  >
+                    {deleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>

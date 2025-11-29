@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { ReminderStatus } from '@prisma/client'
+import { calculateDaysRemaining, getAlertSeverity } from '@/lib/dateUtils'
 
 export interface ExpiryAlert {
   id: string
@@ -34,14 +35,12 @@ export async function checkDriverLicenseExpiries(daysThreshold: number = 30): Pr
     .filter((driver) => driver.licenseExpiry !== null)
     .map((driver) => {
       const licenseExpiry = driver.licenseExpiry as Date
-      const daysRemaining = Math.ceil(
-        (licenseExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      )
+      const daysRemaining = calculateDaysRemaining(licenseExpiry, today)
 
       return {
         id: driver.id,
         type: 'driver_license' as const,
-        severity: daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
+        severity: getAlertSeverity(daysRemaining),
         message: `Driver ${driver.name}'s license expires in ${daysRemaining} days`,
         dueDate: licenseExpiry,
         daysRemaining,
@@ -73,9 +72,7 @@ export async function checkBusReminders(daysThreshold: number = 30): Promise<Exp
   })
 
   return reminders.map((reminder) => {
-    const daysRemaining = Math.ceil(
-      (reminder.dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    )
+    const daysRemaining = calculateDaysRemaining(reminder.dueDate, today)
 
     const typeMap: Record<string, string> = {
       Insurance_Renewal: 'insurance',
@@ -89,7 +86,7 @@ export async function checkBusReminders(daysThreshold: number = 30): Promise<Exp
     return {
       id: reminder.id,
       type: (typeMap[reminder.type] || 'other') as any,
-      severity: daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
+      severity: getAlertSeverity(daysRemaining),
       message: `${reminder.type.replace(/_/g, ' ')} for bus ${reminder.bus.registrationNumber} due in ${daysRemaining} days`,
       dueDate: reminder.dueDate,
       daysRemaining,
@@ -135,20 +132,24 @@ export async function checkBusDocumentExpiries(daysThreshold: number = 30): Prom
 
   const alerts: ExpiryAlert[] = []
 
+  // Helper to format expiry message
+  const formatExpiryMessage = (type: string, regNumber: string, daysRemaining: number) => {
+    if (daysRemaining < 0) {
+      return `${type} for bus ${regNumber} expired ${Math.abs(daysRemaining)} days ago`
+    }
+    return `${type} for bus ${regNumber} expires in ${daysRemaining} days`
+  }
+
   for (const bus of buses) {
     // Check fitness expiry
     if (bus.fitnessExpiry) {
-      const daysRemaining = Math.ceil(
-        (bus.fitnessExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      )
+      const daysRemaining = calculateDaysRemaining(bus.fitnessExpiry, today)
       if (daysRemaining <= daysThreshold) {
         alerts.push({
           id: `fitness-${bus.id}`,
           type: 'other',
-          severity: daysRemaining < 0 ? 'critical' : daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
-          message: daysRemaining < 0
-            ? `Fitness Certificate for bus ${bus.registrationNumber} expired ${Math.abs(daysRemaining)} days ago`
-            : `Fitness Certificate for bus ${bus.registrationNumber} expires in ${daysRemaining} days`,
+          severity: getAlertSeverity(daysRemaining),
+          message: formatExpiryMessage('Fitness Certificate', bus.registrationNumber, daysRemaining),
           dueDate: bus.fitnessExpiry,
           daysRemaining,
           entityId: bus.id,
@@ -159,17 +160,13 @@ export async function checkBusDocumentExpiries(daysThreshold: number = 30): Prom
 
     // Check registration expiry
     if (bus.registrationExpiry) {
-      const daysRemaining = Math.ceil(
-        (bus.registrationExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      )
+      const daysRemaining = calculateDaysRemaining(bus.registrationExpiry, today)
       if (daysRemaining <= daysThreshold) {
         alerts.push({
           id: `registration-${bus.id}`,
           type: 'bus_permit',
-          severity: daysRemaining < 0 ? 'critical' : daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
-          message: daysRemaining < 0
-            ? `Registration for bus ${bus.registrationNumber} expired ${Math.abs(daysRemaining)} days ago`
-            : `Registration for bus ${bus.registrationNumber} expires in ${daysRemaining} days`,
+          severity: getAlertSeverity(daysRemaining),
+          message: formatExpiryMessage('Registration', bus.registrationNumber, daysRemaining),
           dueDate: bus.registrationExpiry,
           daysRemaining,
           entityId: bus.id,
@@ -180,17 +177,13 @@ export async function checkBusDocumentExpiries(daysThreshold: number = 30): Prom
 
     // Check insurance expiry
     if (bus.insuranceExpiry) {
-      const daysRemaining = Math.ceil(
-        (bus.insuranceExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      )
+      const daysRemaining = calculateDaysRemaining(bus.insuranceExpiry, today)
       if (daysRemaining <= daysThreshold) {
         alerts.push({
           id: `insurance-${bus.id}`,
           type: 'bus_insurance',
-          severity: daysRemaining < 0 ? 'critical' : daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
-          message: daysRemaining < 0
-            ? `Insurance for bus ${bus.registrationNumber} expired ${Math.abs(daysRemaining)} days ago`
-            : `Insurance for bus ${bus.registrationNumber} expires in ${daysRemaining} days`,
+          severity: getAlertSeverity(daysRemaining),
+          message: formatExpiryMessage('Insurance', bus.registrationNumber, daysRemaining),
           dueDate: bus.insuranceExpiry,
           daysRemaining,
           entityId: bus.id,

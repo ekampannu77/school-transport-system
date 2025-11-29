@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",
+    "@react-google-maps/api": "^2.20.7",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.0",
     "date-fns": "^3.6.0",

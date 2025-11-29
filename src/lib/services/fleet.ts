@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { calculateFuelEfficiency } from './analytics'
+import { calculateFuelEfficiency, calculateFuelEfficiencyBatch } from './analytics'
 
 /**
  * Get fleet overview statistics
@@ -116,9 +116,14 @@ export async function getBusDetails(busId: string) {
 }
 
 /**
- * Get all buses with summary information including mileage
+ * Get all buses with summary information including mileage and expenses
  */
 export async function getAllBuses() {
+  // Get start of current year
+  const currentYear = new Date().getFullYear()
+  const startOfYear = new Date(currentYear, 0, 1)
+  const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59)
+
   const buses = await prisma.bus.findMany({
     include: {
       primaryDriver: {
@@ -154,12 +159,18 @@ export async function getAllBuses() {
           },
           conductor: {
             select: {
+              id: true,
               name: true,
             },
           },
           route: {
             select: {
+              id: true,
               routeName: true,
+              startPoint: true,
+              endPoint: true,
+              totalDistanceKm: true,
+              waypoints: true,
             },
           },
         },
@@ -170,20 +181,44 @@ export async function getAllBuses() {
     },
   })
 
-  // Calculate mileage for each bus
-  const busesWithMileage = await Promise.allSettled(
-    buses.map(async (bus) => {
-      const mileageData = await calculateFuelEfficiency(bus.id)
-      return {
-        ...bus,
-        mileage: mileageData.kmPerLitre,
-        mileageData: mileageData,
-      }
-    })
-  )
+  // Calculate mileage for all buses in a single optimized batch query
+  const busIds = buses.map(bus => bus.id)
+  const mileageDataMap = await calculateFuelEfficiencyBatch(busIds)
 
-  // Filter out failed promises and extract successful values
-  return busesWithMileage
-    .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled')
-    .map(result => result.value)
+  // Get total expenses for current year for all buses in one query
+  const expensesThisYear = await prisma.expense.groupBy({
+    by: ['busId'],
+    where: {
+      busId: { in: busIds },
+      date: {
+        gte: startOfYear,
+        lte: endOfYear,
+      },
+    },
+    _sum: {
+      amount: true,
+    },
+  })
+
+  // Create a map for quick lookup
+  const expensesMap = new Map<string, number>()
+  for (const expense of expensesThisYear) {
+    expensesMap.set(expense.busId, expense._sum.amount || 0)
+  }
+
+  // Merge mileage data and expenses with bus data
+  return buses.map(bus => {
+    const mileageData = mileageDataMap.get(bus.id) || {
+      kmPerLitre: 0,
+      totalDistance: 0,
+      totalLitres: 0,
+      fuelRecordsCount: 0,
+    }
+    return {
+      ...bus,
+      mileage: mileageData.kmPerLitre,
+      mileageData: mileageData,
+      totalExpensesThisYear: expensesMap.get(bus.id) || 0,
+    }
+  })
 }

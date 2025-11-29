@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { IndianRupee, Bus, Users, Calendar, Trash2 } from 'lucide-react'
+import { formatDate } from '@/lib/dateUtils'
 
 interface BusStats {
   busId: string
@@ -168,13 +169,9 @@ export default function PrivateBusesPage() {
     }).format(amount)
   }
 
-  const formatDate = (dateString: string | null) => {
+  const formatDateOrNever = (dateString: string | null) => {
     if (!dateString) return 'Never'
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
+    return formatDate(dateString)
   }
 
   if (loading) {
@@ -297,7 +294,7 @@ export default function PrivateBusesPage() {
                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="h-4 w-4" />
-                    <span>Last payment: {formatDate(bus.lastPaymentDate)}</span>
+                    <span>Last payment: {formatDateOrNever(bus.lastPaymentDate)}</span>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -477,7 +474,7 @@ export default function PrivateBusesPage() {
                           {formatCurrency(payment.amount)}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {formatDate(payment.paymentDate)}
+                          {formatDateOrNever(payment.paymentDate)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -508,7 +505,7 @@ export default function PrivateBusesPage() {
                       <div>
                         <p className="text-gray-600">Period</p>
                         <p className="font-medium text-gray-900">
-                          {formatDate(payment.periodStartDate)} - {formatDate(payment.periodEndDate)}
+                          {formatDateOrNever(payment.periodStartDate)} - {formatDateOrNever(payment.periodEndDate)}
                         </p>
                       </div>
                       {payment.transactionRef && (

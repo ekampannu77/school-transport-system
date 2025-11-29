@@ -5,6 +5,7 @@ import { User, FileText, CreditCard, AlertCircle, Phone, MapPin } from 'lucide-r
 import DriverDocumentUploader from './DriverDocumentUploader'
 import DriverDocumentList from './DriverDocumentList'
 import LicenseTracker from './LicenseTracker'
+import { formatDate } from '@/lib/dateUtils'
 
 interface DriverData {
   id: string
@@ -128,7 +129,7 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
                 <p className="text-sm text-gray-500 mb-1">License Expiry</p>
                 <p className="text-lg font-semibold text-gray-900">
                   {driver.licenseExpiry
-                    ? new Date(driver.licenseExpiry).toLocaleDateString()
+                    ? formatDate(driver.licenseExpiry)
                     : 'N/A'}
                 </p>
               </div>
@@ -333,11 +334,7 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
                   <p className="text-sm text-gray-500 mb-1">Expiry Date</p>
                   <p className="text-lg font-semibold text-gray-900">
                     {driver.licenseExpiry
-                      ? new Date(driver.licenseExpiry).toLocaleDateString('en-IN', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })
+                      ? formatDate(driver.licenseExpiry)
                       : 'Not provided'}
                   </p>
                   {driver.licenseExpiry && (

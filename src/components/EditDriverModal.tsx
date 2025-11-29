@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
+import { formatDateForInput } from '@/lib/dateUtils'
 
 interface Driver {
   id: string
@@ -44,7 +45,7 @@ export default function EditDriverModal({ isOpen, driver, onClose, onSuccess }: 
         licenseNumber: driver.licenseNumber || '',
         phone: driver.phone,
         address: driver.address || '',
-        licenseExpiry: driver.licenseExpiry ? new Date(driver.licenseExpiry).toISOString().split('T')[0] : '',
+        licenseExpiry: driver.licenseExpiry ? formatDateForInput(driver.licenseExpiry) : '',
         aadharNumber: driver.aadharNumber || '',
         status: driver.status,
       })
