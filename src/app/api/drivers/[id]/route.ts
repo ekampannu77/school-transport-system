@@ -12,10 +12,28 @@ export async function GET(
         _count: {
           select: {
             busRoutes: true,
+            busRoutesAsConductor: true,
             documents: true,
           },
         },
         busRoutes: {
+          where: {
+            endDate: null,
+          },
+          include: {
+            bus: {
+              select: {
+                registrationNumber: true,
+              },
+            },
+            route: {
+              select: {
+                routeName: true,
+              },
+            },
+          },
+        },
+        busRoutesAsConductor: {
           where: {
             endDate: null,
           },
@@ -39,7 +57,21 @@ export async function GET(
       return NextResponse.json({ error: 'Driver not found' }, { status: 404 })
     }
 
-    return NextResponse.json(driver)
+    // Normalize the response - combine routes for conductors
+    const response = {
+      ...driver,
+      busRoutes: driver.role === 'conductor'
+        ? driver.busRoutesAsConductor
+        : driver.busRoutes,
+      _count: {
+        ...driver._count,
+        busRoutes: driver.role === 'conductor'
+          ? driver._count.busRoutesAsConductor
+          : driver._count.busRoutes,
+      },
+    }
+
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error fetching driver details:', error)
     return NextResponse.json({ error: 'Failed to fetch driver details' }, { status: 500 })

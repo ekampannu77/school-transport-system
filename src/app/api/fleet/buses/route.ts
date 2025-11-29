@@ -38,8 +38,10 @@ export async function POST(request: NextRequest) {
       seatingCapacity,
       purchaseDate,
       primaryDriverId,
+      conductorId,
       fitnessExpiry,
       registrationExpiry,
+      insuranceExpiry,
       ownershipType,
       privateOwnerName,
       privateOwnerContact,
@@ -86,6 +88,14 @@ export async function POST(request: NextRequest) {
       registrationReminderDate.setDate(registrationReminderDate.getDate() - 30)
     }
 
+    // Calculate insurance reminder (30 days before expiry)
+    let insuranceReminderDate = null
+    if (insuranceExpiry) {
+      const expiryDate = new Date(insuranceExpiry)
+      insuranceReminderDate = new Date(expiryDate)
+      insuranceReminderDate.setDate(insuranceReminderDate.getDate() - 30)
+    }
+
     // Create new bus
     const bus = await prisma.bus.create({
       data: {
@@ -98,6 +108,8 @@ export async function POST(request: NextRequest) {
         fitnessReminder: fitnessReminderDate,
         registrationExpiry: registrationExpiry ? new Date(registrationExpiry) : null,
         registrationReminder: registrationReminderDate,
+        insuranceExpiry: insuranceExpiry ? new Date(insuranceExpiry) : null,
+        insuranceReminder: insuranceReminderDate,
         ownershipType,
         privateOwnerName: privateOwnerName || null,
         privateOwnerContact: privateOwnerContact || null,
@@ -128,6 +140,47 @@ export async function POST(request: NextRequest) {
           dueDate: new Date(registrationExpiry),
           status: 'Pending',
           notes: 'Vehicle registration expiring soon',
+        },
+      })
+    }
+
+    // Create insurance expiry reminder if date is provided
+    if (insuranceExpiry) {
+      await prisma.reminder.create({
+        data: {
+          busId: bus.id,
+          type: 'Insurance',
+          dueDate: new Date(insuranceExpiry),
+          status: 'Pending',
+          notes: 'Vehicle insurance expiring soon',
+        },
+      })
+    }
+
+    // Create BusRoute if driver or conductor is assigned
+    if (primaryDriverId || conductorId) {
+      // Get the first route (or create a default one)
+      let defaultRoute = await prisma.route.findFirst()
+
+      if (!defaultRoute) {
+        // Create a default route if none exists
+        defaultRoute = await prisma.route.create({
+          data: {
+            routeName: 'Default Route',
+            startLocation: 'School',
+            endLocation: 'Various',
+          },
+        })
+      }
+
+      await prisma.busRoute.create({
+        data: {
+          busId: bus.id,
+          driverId: primaryDriverId || null,
+          conductorId: conductorId || null,
+          routeId: defaultRoute.id,
+          academicTerm: '2024-25',
+          startDate: new Date(),
         },
       })
     }
@@ -174,8 +227,10 @@ export async function PUT(request: NextRequest) {
       seatingCapacity,
       purchaseDate,
       primaryDriverId,
+      conductorId,
       fitnessExpiry,
       registrationExpiry,
+      insuranceExpiry,
       ownershipType,
       privateOwnerName,
       privateOwnerContact,
@@ -225,6 +280,14 @@ export async function PUT(request: NextRequest) {
       registrationReminderDate.setDate(registrationReminderDate.getDate() - 30)
     }
 
+    // Calculate insurance reminder (30 days before expiry)
+    let insuranceReminderDate = null
+    if (insuranceExpiry) {
+      const expiryDate = new Date(insuranceExpiry)
+      insuranceReminderDate = new Date(expiryDate)
+      insuranceReminderDate.setDate(insuranceReminderDate.getDate() - 30)
+    }
+
     // Update bus
     const bus = await prisma.bus.update({
       where: { id },
@@ -238,6 +301,8 @@ export async function PUT(request: NextRequest) {
         fitnessReminder: fitnessReminderDate,
         registrationExpiry: registrationExpiry ? new Date(registrationExpiry) : null,
         registrationReminder: registrationReminderDate,
+        insuranceExpiry: insuranceExpiry ? new Date(insuranceExpiry) : null,
+        insuranceReminder: insuranceReminderDate,
         ownershipType,
         privateOwnerName: privateOwnerName || null,
         privateOwnerContact: privateOwnerContact || null,
@@ -301,6 +366,78 @@ export async function PUT(request: NextRequest) {
             dueDate: new Date(registrationExpiry),
             status: 'Pending',
             notes: 'Vehicle registration expiring soon',
+          },
+        })
+      }
+    }
+
+    // Update or create insurance expiry reminder
+    if (insuranceExpiry) {
+      const existingReminder = await prisma.reminder.findFirst({
+        where: {
+          busId: id,
+          type: 'Insurance',
+        },
+      })
+
+      if (existingReminder) {
+        await prisma.reminder.update({
+          where: { id: existingReminder.id },
+          data: {
+            dueDate: new Date(insuranceExpiry),
+            status: 'Pending',
+          },
+        })
+      } else {
+        await prisma.reminder.create({
+          data: {
+            busId: id,
+            type: 'Insurance',
+            dueDate: new Date(insuranceExpiry),
+            status: 'Pending',
+            notes: 'Vehicle insurance expiring soon',
+          },
+        })
+      }
+    }
+
+    // Update or create BusRoute if driver or conductor is provided
+    if (primaryDriverId || conductorId) {
+      const existingRoute = await prisma.busRoute.findFirst({
+        where: { busId: id },
+      })
+
+      if (existingRoute) {
+        // Update existing route
+        await prisma.busRoute.update({
+          where: { id: existingRoute.id },
+          data: {
+            driverId: primaryDriverId || existingRoute.driverId,
+            conductorId: conductorId || existingRoute.conductorId,
+          },
+        })
+      } else {
+        // Create a new route if none exists
+        let defaultRoute = await prisma.route.findFirst()
+
+        if (!defaultRoute) {
+          defaultRoute = await prisma.route.create({
+            data: {
+              routeName: 'Default Route',
+              startLocation: 'School',
+              endLocation: 'Various',
+            },
+          })
+        }
+
+        await prisma.busRoute.create({
+          data: {
+            busId: id,
+            driverId: primaryDriverId || null,
+            conductorId: conductorId || null,
+            routeId: defaultRoute.id,
+            academicTerm: '2024-25',
+            startDate: new Date(),
           },
         })
       }

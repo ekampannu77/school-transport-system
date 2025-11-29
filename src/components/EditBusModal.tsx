@@ -11,6 +11,7 @@ interface Bus {
   purchaseDate: string
   fitnessExpiry?: string | null
   registrationExpiry?: string | null
+  insuranceExpiry?: string | null
   ownershipType?: 'SCHOOL_OWNED' | 'PRIVATE_OWNED'
   privateOwnerName?: string | null
   privateOwnerContact?: string | null
@@ -22,9 +23,10 @@ interface Bus {
   } | null
 }
 
-interface Driver {
+interface StaffMember {
   id: string
   name: string
+  role: string
 }
 
 interface EditBusModalProps {
@@ -37,15 +39,18 @@ interface EditBusModalProps {
 export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBusModalProps) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [drivers, setDrivers] = useState<Driver[]>([])
+  const [drivers, setDrivers] = useState<StaffMember[]>([])
+  const [conductors, setConductors] = useState<StaffMember[]>([])
   const [formData, setFormData] = useState({
     registrationNumber: '',
     chassisNumber: '',
     seatingCapacity: '',
     purchaseDate: '',
     primaryDriverId: '',
+    conductorId: '',
     fitnessExpiry: '',
     registrationExpiry: '',
+    insuranceExpiry: '',
     ownershipType: 'SCHOOL_OWNED' as 'SCHOOL_OWNED' | 'PRIVATE_OWNED',
     privateOwnerName: '',
     privateOwnerContact: '',
@@ -55,7 +60,7 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
 
   useEffect(() => {
     if (isOpen) {
-      fetchDrivers()
+      fetchStaff()
     }
   }, [isOpen])
 
@@ -67,8 +72,10 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
         seatingCapacity: bus.seatingCapacity.toString(),
         purchaseDate: new Date(bus.purchaseDate).toISOString().split('T')[0],
         primaryDriverId: bus.primaryDriver?.id || '',
+        conductorId: '',
         fitnessExpiry: bus.fitnessExpiry ? new Date(bus.fitnessExpiry).toISOString().split('T')[0] : '',
         registrationExpiry: bus.registrationExpiry ? new Date(bus.registrationExpiry).toISOString().split('T')[0] : '',
+        insuranceExpiry: bus.insuranceExpiry ? new Date(bus.insuranceExpiry).toISOString().split('T')[0] : '',
         ownershipType: bus.ownershipType || 'SCHOOL_OWNED',
         privateOwnerName: bus.privateOwnerName || '',
         privateOwnerContact: bus.privateOwnerContact || '',
@@ -78,13 +85,16 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
     }
   }, [bus])
 
-  const fetchDrivers = async () => {
+  const fetchStaff = async () => {
     try {
       const response = await fetch('/api/drivers')
       const data = await response.json()
-      setDrivers(Array.isArray(data) ? data.filter((d: any) => d.role === 'driver') : [])
+      if (Array.isArray(data)) {
+        setDrivers(data.filter((d: StaffMember) => d.role === 'driver'))
+        setConductors(data.filter((d: StaffMember) => d.role === 'conductor'))
+      }
     } catch (error) {
-      console.error('Error fetching drivers:', error)
+      console.error('Error fetching staff:', error)
     }
   }
 
@@ -297,22 +307,47 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
             </>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Assign Driver (Optional)
-            </label>
-            <select
-              value={formData.primaryDriverId}
-              onChange={(e) => setFormData({ ...formData, primaryDriverId: e.target.value })}
-              className="input-field"
-            >
-              <option value="">No driver assigned</option>
-              {drivers.map((driver) => (
-                <option key={driver.id} value={driver.id}>
-                  {driver.name}
-                </option>
-              ))}
-            </select>
+          {/* Staff Assignment Section */}
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Staff Assignment</h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Assign Driver (Optional)
+                </label>
+                <select
+                  value={formData.primaryDriverId}
+                  onChange={(e) => setFormData({ ...formData, primaryDriverId: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">No driver assigned</option>
+                  {drivers.map((driver) => (
+                    <option key={driver.id} value={driver.id}>
+                      {driver.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Assign Conductor (Optional)
+                </label>
+                <select
+                  value={formData.conductorId}
+                  onChange={(e) => setFormData({ ...formData, conductorId: e.target.value })}
+                  className="input-field"
+                >
+                  <option value="">No conductor assigned</option>
+                  {conductors.map((conductor) => (
+                    <option key={conductor.id} value={conductor.id}>
+                      {conductor.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* Document Expiry Section */}
@@ -320,7 +355,7 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Document Expiry Dates</h3>
             <p className="text-xs text-gray-500 mb-3">Alerts will be created 30 days before expiry</p>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Fitness Expiry
@@ -344,6 +379,20 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
                   value={formData.registrationExpiry}
                   onChange={(e) =>
                     setFormData({ ...formData, registrationExpiry: e.target.value })
+                  }
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Insurance Expiry
+                </label>
+                <input
+                  type="date"
+                  value={formData.insuranceExpiry}
+                  onChange={(e) =>
+                    setFormData({ ...formData, insuranceExpiry: e.target.value })
                   }
                   className="input-field"
                 />

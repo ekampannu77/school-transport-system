@@ -118,23 +118,36 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <p className="text-sm text-gray-500 mb-1">License Number</p>
-            <p className="text-lg font-semibold text-gray-900">{driver.licenseNumber || 'N/A'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-gray-500 mb-1">License Expiry</p>
-            <p className="text-lg font-semibold text-gray-900">
-              {driver.licenseExpiry
-                ? new Date(driver.licenseExpiry).toLocaleDateString()
-                : 'N/A'}
-            </p>
-          </div>
+          {driver.role === 'driver' ? (
+            <>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">License Number</p>
+                <p className="text-lg font-semibold text-gray-900">{driver.licenseNumber || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">License Expiry</p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {driver.licenseExpiry
+                    ? new Date(driver.licenseExpiry).toLocaleDateString()
+                    : 'N/A'}
+                </p>
+              </div>
+            </>
+          ) : (
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Aadhar Number</p>
+              <p className="text-lg font-semibold text-gray-900">
+                {driver.aadharNumber
+                  ? driver.aadharNumber.replace(/(\d{4})(?=\d)/g, '$1 ')
+                  : 'N/A'}
+              </p>
+            </div>
+          )}
           <div>
             <p className="text-sm text-gray-500 mb-1">Current Assignment</p>
             <p className="text-lg font-semibold text-gray-900">
               {driver.busRoutes.length > 0
-                ? driver.busRoutes[0].route.routeName
+                ? `${driver.busRoutes[0].route.routeName} (${driver.busRoutes[0].bus.registrationNumber})`
                 : 'Not assigned'}
             </p>
           </div>
@@ -220,16 +233,18 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
           >
             Documents
           </button>
-          <button
-            onClick={() => setActiveTab('license')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'license'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            License
-          </button>
+          {driver.role === 'driver' && (
+            <button
+              onClick={() => setActiveTab('license')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'license'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              License
+            </button>
+          )}
         </nav>
       </div>
 
@@ -368,7 +383,7 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
         </div>
       )}
 
-      {activeTab === 'license' && (
+      {activeTab === 'license' && driver.role === 'driver' && (
         <LicenseTracker
           driverId={driverId}
           licenseExpiry={driver.licenseExpiry}
