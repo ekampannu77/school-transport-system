@@ -1,12 +1,61 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users } from 'lucide-react'
+import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users, CheckCircle, XCircle } from 'lucide-react'
 import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
 import InsuranceTracker from './InsuranceTracker'
 import BusStudentsList from './BusStudentsList'
 import BusOverview from './BusOverview'
+
+// Helper component to show expiry status with color coding
+function ExpiryCard({ label, date }: { label: string; date: string | null }) {
+  if (!date) {
+    return (
+      <div className="bg-gray-50 rounded-lg p-3">
+        <p className="text-xs text-gray-500">{label}</p>
+        <p className="text-sm font-medium text-gray-400">Not set</p>
+      </div>
+    )
+  }
+
+  const expiryDate = new Date(date)
+  const today = new Date()
+  const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+
+  let statusColor = 'bg-green-50 border-green-200'
+  let textColor = 'text-green-800'
+  let statusText = 'Valid'
+  let Icon = CheckCircle
+  let iconColor = 'text-green-500'
+
+  if (daysUntilExpiry < 0) {
+    statusColor = 'bg-red-50 border-red-200'
+    textColor = 'text-red-800'
+    statusText = 'Expired'
+    Icon = XCircle
+    iconColor = 'text-red-500'
+  } else if (daysUntilExpiry <= 30) {
+    statusColor = 'bg-yellow-50 border-yellow-200'
+    textColor = 'text-yellow-800'
+    statusText = `${daysUntilExpiry} days left`
+    Icon = AlertCircle
+    iconColor = 'text-yellow-500'
+  }
+
+  return (
+    <div className={`rounded-lg p-3 border ${statusColor}`}>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-500">{label}</p>
+        <Icon className={`h-4 w-4 ${iconColor}`} />
+      </div>
+      <p className={`text-sm font-medium ${textColor}`}>
+        {expiryDate.toLocaleDateString()}
+      </p>
+      <p className={`text-xs ${textColor}`}>{statusText}</p>
+    </div>
+  )
+}
 
 interface BusData {
   id: string
@@ -30,6 +79,8 @@ interface BusData {
   } | null
   insuranceExpiry: string | null
   insuranceReminder: string | null
+  fitnessExpiry: string | null
+  registrationExpiry: string | null
   _count: {
     expenses: number
     reminders: number
@@ -153,6 +204,25 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
                 ? bus.busRoutes[0].route.routeName
                 : 'Not assigned'}
             </p>
+          </div>
+        </div>
+
+        {/* Document Expiry Section */}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Document Expiry Status</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <ExpiryCard
+              label="Fitness Certificate"
+              date={bus.fitnessExpiry}
+            />
+            <ExpiryCard
+              label="Registration"
+              date={bus.registrationExpiry}
+            />
+            <ExpiryCard
+              label="Insurance"
+              date={bus.insuranceExpiry}
+            />
           </div>
         </div>
 

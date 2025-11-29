@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
       purchaseDate,
       primaryDriverId,
       fitnessExpiry,
+      registrationExpiry,
       ownershipType,
       privateOwnerName,
       privateOwnerContact,
@@ -77,6 +78,14 @@ export async function POST(request: NextRequest) {
       fitnessReminderDate.setDate(fitnessReminderDate.getDate() - 30)
     }
 
+    // Calculate registration reminder (30 days before expiry)
+    let registrationReminderDate = null
+    if (registrationExpiry) {
+      const expiryDate = new Date(registrationExpiry)
+      registrationReminderDate = new Date(expiryDate)
+      registrationReminderDate.setDate(registrationReminderDate.getDate() - 30)
+    }
+
     // Create new bus
     const bus = await prisma.bus.create({
       data: {
@@ -87,6 +96,8 @@ export async function POST(request: NextRequest) {
         ...(primaryDriverId && { primaryDriver: { connect: { id: primaryDriverId } } }),
         fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
         fitnessReminder: fitnessReminderDate,
+        registrationExpiry: registrationExpiry ? new Date(registrationExpiry) : null,
+        registrationReminder: registrationReminderDate,
         ownershipType,
         privateOwnerName: privateOwnerName || null,
         privateOwnerContact: privateOwnerContact || null,
@@ -104,6 +115,19 @@ export async function POST(request: NextRequest) {
           dueDate: new Date(fitnessExpiry),
           status: 'Pending',
           notes: 'Vehicle fitness certificate expiring soon',
+        },
+      })
+    }
+
+    // Create registration expiry reminder if date is provided
+    if (registrationExpiry) {
+      await prisma.reminder.create({
+        data: {
+          busId: bus.id,
+          type: 'Permit',
+          dueDate: new Date(registrationExpiry),
+          status: 'Pending',
+          notes: 'Vehicle registration expiring soon',
         },
       })
     }
@@ -151,6 +175,7 @@ export async function PUT(request: NextRequest) {
       purchaseDate,
       primaryDriverId,
       fitnessExpiry,
+      registrationExpiry,
       ownershipType,
       privateOwnerName,
       privateOwnerContact,
@@ -192,6 +217,14 @@ export async function PUT(request: NextRequest) {
       fitnessReminderDate.setDate(fitnessReminderDate.getDate() - 30)
     }
 
+    // Calculate registration reminder (30 days before expiry)
+    let registrationReminderDate = null
+    if (registrationExpiry) {
+      const expiryDate = new Date(registrationExpiry)
+      registrationReminderDate = new Date(expiryDate)
+      registrationReminderDate.setDate(registrationReminderDate.getDate() - 30)
+    }
+
     // Update bus
     const bus = await prisma.bus.update({
       where: { id },
@@ -203,6 +236,8 @@ export async function PUT(request: NextRequest) {
         ...(primaryDriverId ? { primaryDriver: { connect: { id: primaryDriverId } } } : { primaryDriver: { disconnect: true } }),
         fitnessExpiry: fitnessExpiry ? new Date(fitnessExpiry) : null,
         fitnessReminder: fitnessReminderDate,
+        registrationExpiry: registrationExpiry ? new Date(registrationExpiry) : null,
+        registrationReminder: registrationReminderDate,
         ownershipType,
         privateOwnerName: privateOwnerName || null,
         privateOwnerContact: privateOwnerContact || null,
@@ -213,7 +248,6 @@ export async function PUT(request: NextRequest) {
 
     // Update or create fitness expiry reminder
     if (fitnessExpiry) {
-      // Try to find existing fitness reminder
       const existingReminder = await prisma.reminder.findFirst({
         where: {
           busId: id,
@@ -222,7 +256,6 @@ export async function PUT(request: NextRequest) {
       })
 
       if (existingReminder) {
-        // Update existing reminder
         await prisma.reminder.update({
           where: { id: existingReminder.id },
           data: {
@@ -231,7 +264,6 @@ export async function PUT(request: NextRequest) {
           },
         })
       } else {
-        // Create new reminder
         await prisma.reminder.create({
           data: {
             busId: id,
@@ -239,6 +271,36 @@ export async function PUT(request: NextRequest) {
             dueDate: new Date(fitnessExpiry),
             status: 'Pending',
             notes: 'Vehicle fitness certificate expiring soon',
+          },
+        })
+      }
+    }
+
+    // Update or create registration expiry reminder
+    if (registrationExpiry) {
+      const existingReminder = await prisma.reminder.findFirst({
+        where: {
+          busId: id,
+          type: 'Permit',
+        },
+      })
+
+      if (existingReminder) {
+        await prisma.reminder.update({
+          where: { id: existingReminder.id },
+          data: {
+            dueDate: new Date(registrationExpiry),
+            status: 'Pending',
+          },
+        })
+      } else {
+        await prisma.reminder.create({
+          data: {
+            busId: id,
+            type: 'Permit',
+            dueDate: new Date(registrationExpiry),
+            status: 'Pending',
+            notes: 'Vehicle registration expiring soon',
           },
         })
       }

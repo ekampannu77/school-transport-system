@@ -25,6 +25,7 @@ const baseBusSchema = z.object({
   purchaseDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid purchase date'),
   primaryDriverId: z.string().uuid().optional().nullable(),
   fitnessExpiry: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid fitness expiry date').optional().nullable(),
+  registrationExpiry: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid registration expiry date').optional().nullable(),
   ownershipType: z.enum(['SCHOOL_OWNED', 'PRIVATE_OWNED']).default('SCHOOL_OWNED'),
   privateOwnerName: z.string().max(100).optional().nullable(),
   privateOwnerContact: z.string().max(20).optional().nullable(),
