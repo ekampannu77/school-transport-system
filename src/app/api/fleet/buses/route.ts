@@ -425,8 +425,9 @@ export async function PUT(request: NextRequest) {
           defaultRoute = await prisma.route.create({
             data: {
               routeName: 'Default Route',
-              startLocation: 'School',
-              endLocation: 'Various',
+              startPoint: 'School',
+              endPoint: 'Various',
+              totalDistanceKm: 0,
             },
           })
         }
