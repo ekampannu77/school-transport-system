@@ -22,6 +22,7 @@ const initialFormData = {
   purchaseDate: new Date().toISOString().split('T')[0],
   primaryDriverId: '',
   fitnessExpiry: '',
+  registrationExpiry: '',
   ownershipType: 'SCHOOL_OWNED',
   privateOwnerName: '',
   privateOwnerContact: '',
@@ -212,21 +213,40 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Vehicle Fitness Expiry Date (Optional)
-          </label>
-          <input
-            type="date"
-            value={formData.fitnessExpiry}
-            onChange={(e) =>
-              setFormData({ ...formData, fitnessExpiry: e.target.value })
-            }
-            className="input-field"
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            An alert will be created 30 days before expiry
-          </p>
+        {/* Document Expiry Section */}
+        <div className="pt-4 border-t border-gray-200">
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Document Expiry Dates</h3>
+          <p className="text-xs text-gray-500 mb-3">Alerts will be created 30 days before expiry</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fitness Expiry
+              </label>
+              <input
+                type="date"
+                value={formData.fitnessExpiry}
+                onChange={(e) =>
+                  setFormData({ ...formData, fitnessExpiry: e.target.value })
+                }
+                className="input-field"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Registration Expiry
+              </label>
+              <input
+                type="date"
+                value={formData.registrationExpiry}
+                onChange={(e) =>
+                  setFormData({ ...formData, registrationExpiry: e.target.value })
+                }
+                className="input-field"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Ownership Section */}

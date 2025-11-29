@@ -9,6 +9,8 @@ interface Bus {
   chassisNumber: string
   seatingCapacity: number
   purchaseDate: string
+  fitnessExpiry?: string | null
+  registrationExpiry?: string | null
   ownershipType?: 'SCHOOL_OWNED' | 'PRIVATE_OWNED'
   privateOwnerName?: string | null
   privateOwnerContact?: string | null
@@ -42,6 +44,8 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
     seatingCapacity: '',
     purchaseDate: '',
     primaryDriverId: '',
+    fitnessExpiry: '',
+    registrationExpiry: '',
     ownershipType: 'SCHOOL_OWNED' as 'SCHOOL_OWNED' | 'PRIVATE_OWNED',
     privateOwnerName: '',
     privateOwnerContact: '',
@@ -63,6 +67,8 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
         seatingCapacity: bus.seatingCapacity.toString(),
         purchaseDate: new Date(bus.purchaseDate).toISOString().split('T')[0],
         primaryDriverId: bus.primaryDriver?.id || '',
+        fitnessExpiry: bus.fitnessExpiry ? new Date(bus.fitnessExpiry).toISOString().split('T')[0] : '',
+        registrationExpiry: bus.registrationExpiry ? new Date(bus.registrationExpiry).toISOString().split('T')[0] : '',
         ownershipType: bus.ownershipType || 'SCHOOL_OWNED',
         privateOwnerName: bus.privateOwnerName || '',
         privateOwnerContact: bus.privateOwnerContact || '',
@@ -307,6 +313,42 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Document Expiry Section */}
+          <div className="pt-4 border-t border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Document Expiry Dates</h3>
+            <p className="text-xs text-gray-500 mb-3">Alerts will be created 30 days before expiry</p>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fitness Expiry
+                </label>
+                <input
+                  type="date"
+                  value={formData.fitnessExpiry}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fitnessExpiry: e.target.value })
+                  }
+                  className="input-field"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Registration Expiry
+                </label>
+                <input
+                  type="date"
+                  value={formData.registrationExpiry}
+                  onChange={(e) =>
+                    setFormData({ ...formData, registrationExpiry: e.target.value })
+                  }
+                  className="input-field"
+                />
+              </div>
+            </div>
           </div>
 
           </form>

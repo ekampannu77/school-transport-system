@@ -79,7 +79,7 @@ export async function checkBusReminders(daysThreshold: number = 30): Promise<Exp
 
     const typeMap: Record<string, string> = {
       Insurance_Renewal: 'insurance',
-      Permit: 'permit',
+      Permit: 'registration',
       Oil_Change: 'maintenance',
       License_Renewal: 'license',
       Fitness_Certificate: 'fitness',
@@ -100,6 +100,110 @@ export async function checkBusReminders(daysThreshold: number = 30): Promise<Exp
 }
 
 /**
+ * Check for bus document expiries directly from bus records
+ * This catches expiries even if reminders weren't created
+ */
+export async function checkBusDocumentExpiries(daysThreshold: number = 30): Promise<ExpiryAlert[]> {
+  const today = new Date()
+  const thresholdDate = new Date()
+  thresholdDate.setDate(today.getDate() + daysThreshold)
+
+  const buses = await prisma.bus.findMany({
+    where: {
+      OR: [
+        {
+          fitnessExpiry: {
+            lte: thresholdDate,
+            gte: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000), // Include expired up to 30 days ago
+          },
+        },
+        {
+          registrationExpiry: {
+            lte: thresholdDate,
+            gte: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+        {
+          insuranceExpiry: {
+            lte: thresholdDate,
+            gte: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      ],
+    },
+  })
+
+  const alerts: ExpiryAlert[] = []
+
+  for (const bus of buses) {
+    // Check fitness expiry
+    if (bus.fitnessExpiry) {
+      const daysRemaining = Math.ceil(
+        (bus.fitnessExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      if (daysRemaining <= daysThreshold) {
+        alerts.push({
+          id: `fitness-${bus.id}`,
+          type: 'other',
+          severity: daysRemaining < 0 ? 'critical' : daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
+          message: daysRemaining < 0
+            ? `Fitness Certificate for bus ${bus.registrationNumber} expired ${Math.abs(daysRemaining)} days ago`
+            : `Fitness Certificate for bus ${bus.registrationNumber} expires in ${daysRemaining} days`,
+          dueDate: bus.fitnessExpiry,
+          daysRemaining,
+          entityId: bus.id,
+          entityName: bus.registrationNumber,
+        })
+      }
+    }
+
+    // Check registration expiry
+    if (bus.registrationExpiry) {
+      const daysRemaining = Math.ceil(
+        (bus.registrationExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      if (daysRemaining <= daysThreshold) {
+        alerts.push({
+          id: `registration-${bus.id}`,
+          type: 'bus_permit',
+          severity: daysRemaining < 0 ? 'critical' : daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
+          message: daysRemaining < 0
+            ? `Registration for bus ${bus.registrationNumber} expired ${Math.abs(daysRemaining)} days ago`
+            : `Registration for bus ${bus.registrationNumber} expires in ${daysRemaining} days`,
+          dueDate: bus.registrationExpiry,
+          daysRemaining,
+          entityId: bus.id,
+          entityName: bus.registrationNumber,
+        })
+      }
+    }
+
+    // Check insurance expiry
+    if (bus.insuranceExpiry) {
+      const daysRemaining = Math.ceil(
+        (bus.insuranceExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      if (daysRemaining <= daysThreshold) {
+        alerts.push({
+          id: `insurance-${bus.id}`,
+          type: 'bus_insurance',
+          severity: daysRemaining < 0 ? 'critical' : daysRemaining <= 7 ? 'critical' : daysRemaining <= 15 ? 'warning' : 'info',
+          message: daysRemaining < 0
+            ? `Insurance for bus ${bus.registrationNumber} expired ${Math.abs(daysRemaining)} days ago`
+            : `Insurance for bus ${bus.registrationNumber} expires in ${daysRemaining} days`,
+          dueDate: bus.insuranceExpiry,
+          daysRemaining,
+          entityId: bus.id,
+          entityName: bus.registrationNumber,
+        })
+      }
+    }
+  }
+
+  return alerts
+}
+
+/**
  * Get all critical alerts (combined driver and bus alerts)
  */
 export async function getAllCriticalAlerts(daysThreshold: number = 30): Promise<{
@@ -108,12 +212,31 @@ export async function getAllCriticalAlerts(daysThreshold: number = 30): Promise<
   warningCount: number
   infoCount: number
 }> {
-  const [driverAlerts, busAlerts] = await Promise.all([
+  const [driverAlerts, busAlerts, documentExpiryAlerts] = await Promise.all([
     checkDriverLicenseExpiries(daysThreshold),
     checkBusReminders(daysThreshold),
+    checkBusDocumentExpiries(daysThreshold),
   ])
 
-  const allAlerts = [...driverAlerts, ...busAlerts].sort(
+  // Combine and deduplicate alerts (prefer document expiry alerts as they're more direct)
+  const alertMap = new Map<string, ExpiryAlert>()
+
+  // Add reminder-based alerts first
+  for (const alert of busAlerts) {
+    alertMap.set(alert.id, alert)
+  }
+
+  // Add document expiry alerts (these will have unique IDs like fitness-xxx, registration-xxx)
+  for (const alert of documentExpiryAlerts) {
+    alertMap.set(alert.id, alert)
+  }
+
+  // Add driver alerts
+  for (const alert of driverAlerts) {
+    alertMap.set(alert.id, alert)
+  }
+
+  const allAlerts = Array.from(alertMap.values()).sort(
     (a, b) => a.daysRemaining - b.daysRemaining
   )
 
