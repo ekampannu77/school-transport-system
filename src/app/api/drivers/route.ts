@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { DriverStatus } from '@prisma/client'
+import { createDriverSchema, updateDriverSchema, validateRequest } from '@/lib/validations'
+import { driverLogger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -16,9 +18,10 @@ export async function GET() {
         name: 'asc',
       },
     })
+    driverLogger.debug('Fetched all drivers', { count: drivers.length })
     return NextResponse.json(drivers)
   } catch (error) {
-    console.error('Error fetching drivers:', error)
+    driverLogger.error('Error fetching drivers', error)
     return NextResponse.json(
       { error: 'Failed to fetch drivers' },
       { status: 500 }
@@ -29,31 +32,18 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, role, licenseNumber, phone, address, licenseExpiry, status } = body
 
-    // Validation
-    if (!name || !phone) {
+    // Validate input
+    const validation = validateRequest(createDriverSchema, body)
+    if (!validation.success) {
+      driverLogger.info('Driver creation validation failed', { error: validation.error })
       return NextResponse.json(
-        { error: 'Missing required fields: name and phone' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    // Validate license fields for drivers
-    if (role === 'driver' && (!licenseNumber || !licenseExpiry)) {
-      return NextResponse.json(
-        { error: 'License number and expiry are required for drivers' },
-        { status: 400 }
-      )
-    }
-
-    // Validate status
-    if (status && !Object.values(DriverStatus).includes(status)) {
-      return NextResponse.json(
-        { error: 'Invalid driver status' },
-        { status: 400 }
-      )
-    }
+    const { name, role, licenseNumber, phone, address, licenseExpiry, aadharNumber, status } = validation.data
 
     // Create new driver
     const driver = await prisma.driver.create({
@@ -64,27 +54,28 @@ export async function POST(request: NextRequest) {
         phone,
         address: address || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        aadharNumber: aadharNumber || null,
         status: status || DriverStatus.active,
       },
     })
 
+    driverLogger.info('Driver created successfully', { driverId: driver.id, name })
+
     return NextResponse.json(driver, { status: 201 })
   } catch (error: any) {
-    console.error('Error creating driver:', error)
-    console.error('Error code:', error.code)
-    console.error('Error message:', error.message)
+    driverLogger.error('Error creating driver', error, { code: error.code })
 
     // Handle unique constraint violation
     if (error.code === 'P2002') {
       const field = error.meta?.target?.[0] || 'field'
       return NextResponse.json(
-        { error: `Driver with this ${field} already exists`, details: error.message },
+        { error: `Driver with this ${field} already exists` },
         { status: 409 }
       )
     }
 
     return NextResponse.json(
-      { error: 'Failed to create driver', details: error.message },
+      { error: 'Failed to create driver' },
       { status: 500 }
     )
   }
@@ -93,22 +84,18 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json()
-    const { id, name, role, licenseNumber, phone, address, licenseExpiry, status } = body
 
-    if (!id) {
+    // Validate input
+    const validation = validateRequest(updateDriverSchema, body)
+    if (!validation.success) {
+      driverLogger.info('Driver update validation failed', { error: validation.error })
       return NextResponse.json(
-        { error: 'Driver ID is required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    // Validate license fields for drivers
-    if (role === 'driver' && (!licenseNumber || !licenseExpiry)) {
-      return NextResponse.json(
-        { error: 'License number and expiry are required for drivers' },
-        { status: 400 }
-      )
-    }
+    const { id, name, role, licenseNumber, phone, address, licenseExpiry, aadharNumber, status } = validation.data
 
     // Update driver
     const driver = await prisma.driver.update({
@@ -120,13 +107,16 @@ export async function PUT(request: NextRequest) {
         phone,
         address: address || null,
         licenseExpiry: licenseExpiry ? new Date(licenseExpiry) : null,
+        aadharNumber: aadharNumber || null,
         status,
       },
     })
 
+    driverLogger.info('Driver updated successfully', { driverId: id, name })
+
     return NextResponse.json(driver)
   } catch (error: any) {
-    console.error('Error updating driver:', error)
+    driverLogger.error('Error updating driver', error, { code: error.code })
 
     if (error.code === 'P2025') {
       return NextResponse.json(
@@ -165,9 +155,11 @@ export async function DELETE(request: NextRequest) {
       where: { id },
     })
 
+    driverLogger.info('Driver deleted successfully', { driverId: id })
+
     return NextResponse.json({ message: 'Driver deleted successfully' })
   } catch (error: any) {
-    console.error('Error deleting driver:', error)
+    driverLogger.error('Error deleting driver', error, { code: error.code })
 
     if (error.code === 'P2025') {
       return NextResponse.json(

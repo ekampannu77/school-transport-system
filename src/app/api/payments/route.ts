@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createPaymentSchema, validateRequest } from '@/lib/validations'
+import { paymentLogger } from '@/lib/logger'
 
 // Helper function to generate unique receipt number
 async function generateReceiptNumber(): Promise<string> {
@@ -28,6 +30,17 @@ async function generateReceiptNumber(): Promise<string> {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    // Validate input
+    const validation = validateRequest(createPaymentSchema, body)
+    if (!validation.success) {
+      paymentLogger.info('Payment validation failed', { error: validation.error })
+      return NextResponse.json(
+        { error: validation.error },
+        { status: 400 }
+      )
+    }
+
     const {
       studentId,
       amount,
@@ -40,23 +53,7 @@ export async function POST(request: NextRequest) {
       collectedBy,
       remarks,
       paymentDate,
-    } = body
-
-    // Validate required fields
-    if (!studentId || !amount || !quarter || !academicYear || !paymentMethod) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      )
-    }
-
-    // Validate quarter (must be 1, 2, 3, or 4)
-    if (![1, 2, 3, 4].includes(quarter)) {
-      return NextResponse.json(
-        { error: 'Quarter must be 1, 2, 3, or 4' },
-        { status: 400 }
-      )
-    }
+    } = validation.data
 
     // Check if student exists
     const student = await prisma.student.findUnique({
@@ -65,6 +62,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (!student) {
+      paymentLogger.info('Student not found for payment', { studentId })
       return NextResponse.json(
         { error: 'Student not found' },
         { status: 404 }
@@ -81,6 +79,7 @@ export async function POST(request: NextRequest) {
     })
 
     if (existingPayment) {
+      paymentLogger.info('Duplicate payment attempt', { studentId, quarter, academicYear })
       return NextResponse.json(
         {
           error: `Payment already exists for Q${quarter} ${academicYear}`,
@@ -97,15 +96,15 @@ export async function POST(request: NextRequest) {
     const payment = await prisma.payment.create({
       data: {
         studentId,
-        amount: parseFloat(amount),
+        amount,
         quarter,
         academicYear,
         paymentMethod,
-        transactionId,
-        checkNumber,
-        bankName,
-        collectedBy,
-        remarks,
+        transactionId: transactionId || null,
+        checkNumber: checkNumber || null,
+        bankName: bankName || null,
+        collectedBy: collectedBy || null,
+        remarks: remarks || null,
         receiptNumber,
         paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
       },
@@ -131,9 +130,16 @@ export async function POST(request: NextRequest) {
       data: { feePaid: totalPaid._sum.amount || 0 },
     })
 
+    paymentLogger.info('Payment collected successfully', {
+      paymentId: payment.id,
+      studentId,
+      amount,
+      receiptNumber,
+    })
+
     return NextResponse.json(payment, { status: 201 })
   } catch (error) {
-    console.error('Error collecting payment:', error)
+    paymentLogger.error('Error collecting payment', error)
     return NextResponse.json(
       { error: 'Failed to collect payment' },
       { status: 500 }
@@ -182,9 +188,10 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    paymentLogger.debug('Fetched payments', { count: payments.length })
     return NextResponse.json(payments)
   } catch (error) {
-    console.error('Error fetching payments:', error)
+    paymentLogger.error('Error fetching payments', error)
     return NextResponse.json(
       { error: 'Failed to fetch payments' },
       { status: 500 }

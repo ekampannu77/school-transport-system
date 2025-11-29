@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { Bus, User, AlertCircle, Plus, Edit, Trash2 } from 'lucide-react'
 import AddBusModal from './AddBusModal'
 import EditBusModal from './EditBusModal'
+import { ConfirmModal } from './Modal'
+import { useToast } from './Toast'
 
 interface BusData {
   id: string
@@ -13,6 +15,11 @@ interface BusData {
   seatingCapacity: number
   purchaseDate: string
   mileage: number
+  ownershipType?: 'SCHOOL_OWNED' | 'PRIVATE_OWNED'
+  privateOwnerName?: string | null
+  privateOwnerContact?: string | null
+  privateOwnerBank?: string | null
+  schoolCommission?: number | null
   primaryDriver: {
     id: string
     name: string
@@ -43,6 +50,8 @@ export default function FleetTable() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedBus, setSelectedBus] = useState<BusData | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const toast = useToast()
 
   const fetchBuses = async () => {
     try {
@@ -71,6 +80,7 @@ export default function FleetTable() {
   }
 
   const handleDelete = async (busId: string) => {
+    setDeleting(true)
     try {
       const response = await fetch(`/api/fleet/buses?id=${busId}`, {
         method: 'DELETE',
@@ -80,11 +90,14 @@ export default function FleetTable() {
         throw new Error('Failed to delete bus')
       }
 
+      toast.success('Bus deleted successfully')
       fetchBuses()
       setDeleteConfirm(null)
     } catch (error) {
       console.error('Error deleting bus:', error)
-      alert('Failed to delete bus. Please try again.')
+      toast.error('Failed to delete bus. Please try again.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -120,6 +133,9 @@ export default function FleetTable() {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Bus Details
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Ownership
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Assigned Driver
@@ -163,6 +179,17 @@ export default function FleetTable() {
                       <div className="text-sm text-gray-500">{bus.chassisNumber}</div>
                     </div>
                   </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  {bus.ownershipType === 'PRIVATE_OWNED' ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      Private
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      School
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {bus.primaryDriver ? (
@@ -270,30 +297,16 @@ export default function FleetTable() {
       />
 
       {/* Delete Confirmation Dialog */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Bus</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this bus? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="flex-1 btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={() => deleteConfirm && handleDelete(deleteConfirm)}
+        title="Delete Bus"
+        message="Are you sure you want to delete this bus? This action cannot be undone."
+        confirmText="Delete"
+        confirmVariant="danger"
+        loading={deleting}
+      />
     </div>
   )
 }

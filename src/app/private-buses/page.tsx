@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { IndianRupee, Bus, Users, TrendingUp, DollarSign, Calendar } from 'lucide-react'
+import { IndianRupee, Bus, Users, Calendar, Trash2 } from 'lucide-react'
 
 interface BusStats {
   busId: string
@@ -135,6 +135,31 @@ export default function PrivateBusesPage() {
     }
   }
 
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/bus-owner-payments?id=${paymentId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete payment')
+      }
+
+      // Refresh payment history and stats
+      if (selectedBus) {
+        await fetchPaymentHistory(selectedBus.busId)
+      }
+      await fetchBusStats()
+    } catch (error: any) {
+      alert(error.message)
+    }
+  }
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -196,39 +221,15 @@ export default function PrivateBusesPage() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalStats.totalRevenue)}</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">School Commission</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalStats.totalCommission)}</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-lg">
-                <DollarSign className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Total Paid</p>
+                <p className="text-sm text-gray-600 mb-1">Total Paid to Owners</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalStats.totalPaid)}</p>
               </div>
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <IndianRupee className="h-6 w-6 text-purple-600" />
+              <div className="p-3 bg-green-100 rounded-lg">
+                <IndianRupee className="h-6 w-6 text-green-600" />
               </div>
             </div>
           </div>
@@ -236,11 +237,11 @@ export default function PrivateBusesPage() {
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 mb-1">Amount Owing</p>
-                <p className="text-2xl font-bold text-red-600">{formatCurrency(totalStats.totalOwing)}</p>
+                <p className="text-sm text-gray-600 mb-1">Private Buses</p>
+                <p className="text-2xl font-bold text-gray-900">{busStats.length}</p>
               </div>
-              <div className="p-3 bg-red-100 rounded-lg">
-                <IndianRupee className="h-6 w-6 text-red-600" />
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Bus className="h-6 w-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -276,39 +277,19 @@ export default function PrivateBusesPage() {
                   </div>
                 </div>
 
-                {/* Financial Details Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Total Revenue</p>
-                    <p className="text-lg font-semibold text-gray-900">{formatCurrency(bus.totalRevenue)}</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Commission ({bus.schoolCommission}%)</p>
-                    <p className="text-lg font-semibold text-gray-900">{formatCurrency(bus.commission)}</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Net Revenue</p>
-                    <p className="text-lg font-semibold text-gray-900">{formatCurrency(bus.netRevenue)}</p>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg">
-                    <p className="text-xs text-gray-600 mb-1">Monthly Expected</p>
-                    <p className="text-lg font-semibold text-gray-900">{formatCurrency(bus.monthlyExpected)}</p>
-                  </div>
-                </div>
-
-                {/* Payment Status */}
+                {/* Financial Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span className="text-sm text-blue-800">Fees Collected</span>
+                    <span className="font-semibold text-blue-900">{formatCurrency(bus.totalRevenue)}</span>
+                  </div>
                   <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
                     <span className="text-sm text-green-800">Paid to Owner</span>
                     <span className="font-semibold text-green-900">{formatCurrency(bus.totalPaid)}</span>
                   </div>
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <span className="text-sm text-yellow-800">Pending</span>
-                    <span className="font-semibold text-yellow-900">{formatCurrency(bus.totalPending)}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-                    <span className="text-sm text-red-800">Amount Owing</span>
-                    <span className="font-semibold text-red-900">{formatCurrency(bus.amountOwing)}</span>
+                  <div className={`flex items-center justify-between p-3 rounded-lg border ${bus.amountOwing > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                    <span className={`text-sm ${bus.amountOwing > 0 ? 'text-red-800' : 'text-gray-600'}`}>Amount Owing</span>
+                    <span className={`font-semibold ${bus.amountOwing > 0 ? 'text-red-900' : 'text-gray-900'}`}>{formatCurrency(bus.amountOwing)}</span>
                   </div>
                 </div>
 
@@ -499,15 +480,24 @@ export default function PrivateBusesPage() {
                           {formatDate(payment.paymentDate)}
                         </p>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          payment.status === 'PAID'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {payment.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            payment.status === 'PAID'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {payment.status}
+                        </span>
+                        <button
+                          onClick={() => handleDeletePayment(payment.id)}
+                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete payment"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 text-sm">

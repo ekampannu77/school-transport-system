@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
-import { Bus, DollarSign, AlertTriangle, Home, User, MapPin, FileText, Wallet, Users, Fuel, ChevronDown } from 'lucide-react'
+import { Bus, DollarSign, AlertTriangle, Home, User, MapPin, FileText, Wallet, Users, Fuel, ChevronDown, Car } from 'lucide-react'
 import ExportModal from './ExportModal'
 
 interface DropdownItem {
@@ -101,13 +101,26 @@ export default function Navigation() {
       ]
     },
     {
+      label: 'Fuel',
+      icon: Fuel,
+      href: '/fuel-inventory'
+    },
+    {
+      label: 'Personal Vehicles',
+      icon: Car,
+      href: '/personal-vehicles'
+    },
+    {
+      label: 'Private Buses',
+      icon: Users,
+      href: '/private-buses'
+    },
+    {
       label: 'Finance',
       icon: Wallet,
       items: [
         { href: '/fees', label: 'Fees', icon: Wallet },
-        { href: '/private-buses', label: 'Private Buses', icon: Users },
         { href: '/expenses', label: 'Expenses', icon: DollarSign },
-        { href: '/fuel-inventory', label: 'Fuel', icon: Fuel },
       ]
     },
     {
@@ -133,6 +146,7 @@ export default function Navigation() {
     { href: '/private-buses', label: 'Private Buses', icon: Users },
     { href: '/expenses', label: 'Expenses', icon: DollarSign },
     { href: '/fuel-inventory', label: 'Fuel', icon: Fuel },
+    { href: '/personal-vehicles', label: 'Personal Vehicles', icon: Car },
     { href: '/alerts', label: 'Alerts', icon: AlertTriangle },
   ]
 

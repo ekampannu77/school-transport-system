@@ -309,37 +309,37 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Student
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Fee
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Fee Paid
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Remaining
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Class
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Section
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Village
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Bus Usage
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Parent Contact
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                       Actions
                     </th>
                   </tr>
@@ -347,20 +347,20 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                 <tbody className="bg-white divide-y divide-gray-200">
                   {displayStudents.map((student) => (
                     <tr key={student.id} className={`hover:bg-gray-50 ${!student.isActive ? 'bg-gray-50 opacity-60' : ''}`}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{student.name}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">₹{(student.monthlyFee || 0).toLocaleString()}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         {editingFeePaidId === student.id ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             <input
                               type="number"
                               value={tempFeePaid}
                               onChange={(e) => setTempFeePaid(e.target.value)}
-                              className="w-24 px-2 py-1 border border-gray-300 rounded text-sm"
+                              className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
                               min="0"
                               step="0.01"
                               autoFocus
@@ -382,42 +382,42 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm font-semibold text-orange-600">
                           ₹{((student.monthlyFee || 0) - (student.feePaid || 0)).toLocaleString()}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.class}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-500">{student.section || '-'}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm text-gray-900">{student.village}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 space-y-1">
-                          <div className="flex items-center text-green-600">
-                            <span className="text-xs">Started: {new Date(student.startDate).toLocaleDateString('en-IN')}</span>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className="text-xs text-gray-900">
+                          <div className="text-green-600">
+                            {new Date(student.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                           </div>
                           {student.endDate && (
-                            <div className="flex items-center text-red-600">
-                              <span className="text-xs">Stopped: {new Date(student.endDate).toLocaleDateString('en-IN')}</span>
+                            <div className="text-red-600">
+                              {new Date(student.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm space-y-1">
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <div className="text-xs">
                           <div className="text-gray-900">{student.parentName}</div>
                           <div className="flex items-center text-gray-500">
                             <Phone className="h-3 w-3 mr-1" />
-                            <span className="text-xs">{student.parentContact}</span>
+                            {student.parentContact}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         {student.isActive ? (
                           <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                             Active
@@ -428,52 +428,33 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
                           </span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleCollectPayment(student)}
-                            className="text-green-600 hover:text-green-900"
+                            className="text-green-600 hover:text-green-900 p-1"
                             title="Collect payment"
                           >
                             <DollarSign className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleShowPaymentHistory(student)}
-                            className="text-purple-600 hover:text-purple-900"
+                            className="text-purple-600 hover:text-purple-900 p-1"
                             title="Payment history"
                           >
                             <Receipt className="h-4 w-4" />
                           </button>
                           <button
                             onClick={() => handleEdit(student)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 p-1"
                             title="Edit student"
                           >
                             <Edit className="h-4 w-4" />
                           </button>
-                          {student.isActive ? (
-                            <button
-                              onClick={() => handleMarkInactive(student.id, student.name)}
-                              disabled={deletingId === student.id}
-                              className="text-orange-600 hover:text-orange-900 disabled:opacity-50"
-                              title="Mark as stopped using bus"
-                            >
-                              Stop
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleMarkActive(student.id)}
-                              disabled={deletingId === student.id}
-                              className="text-green-600 hover:text-green-900 disabled:opacity-50"
-                              title="Mark as active again"
-                            >
-                              Activate
-                            </button>
-                          )}
                           <button
                             onClick={() => handleDelete(student.id, student.name)}
                             disabled={deletingId === student.id}
-                            className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                            className="text-red-600 hover:text-red-900 disabled:opacity-50 p-1"
                             title="Delete student permanently"
                           >
                             <Trash2 className="h-4 w-4" />
