@@ -1,12 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users, CheckCircle, XCircle } from 'lucide-react'
+import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users, CheckCircle, XCircle, Gauge, TrendingUp } from 'lucide-react'
 import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
-import InsuranceTracker from './InsuranceTracker'
 import BusStudentsList from './BusStudentsList'
-import BusOverview from './BusOverview'
 
 // Helper component to show expiry status with color coding
 function ExpiryCard({ label, date }: { label: string; date: string | null }) {
@@ -118,7 +116,7 @@ interface BusData {
 export default function BusDetailsContent({ busId }: { busId: string }) {
   const [bus, setBus] = useState<BusData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'documents' | 'insurance'>('overview')
+  const [activeTab, setActiveTab] = useState<'students' | 'documents'>('students')
 
   useEffect(() => {
     fetchBusDetails()
@@ -178,12 +176,6 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
               <p className="text-sm text-gray-500">Chassis: {bus.chassisNumber}</p>
             </div>
           </div>
-          {bus.primaryDriver && (
-            <div className="text-right">
-              <p className="text-sm text-gray-500">Primary Driver</p>
-              <p className="font-medium text-gray-900">{bus.primaryDriver.name}</p>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -226,52 +218,88 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           </div>
         </div>
 
-        {bus.busRoutes.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Assigned Staff</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {bus.busRoutes[0].driver && (
-                <div className="flex items-center">
-                  <div className="text-sm">
-                    <p className="text-gray-500">Driver</p>
-                    <p className="font-medium text-gray-900">{bus.busRoutes[0].driver.name}</p>
-                  </div>
-                </div>
-              )}
-              {bus.busRoutes[0].conductor && (
-                <div className="flex items-center">
-                  <div className="text-sm">
-                    <p className="text-gray-500">Conductor</p>
-                    <p className="font-medium text-gray-900">{bus.busRoutes[0].conductor.name}</p>
-                  </div>
-                </div>
-              )}
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Assigned Staff</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center">
+              <div className="text-sm">
+                <p className="text-gray-500">Driver</p>
+                <p className="font-medium text-gray-900">
+                  {bus.primaryDriver?.name || bus.busRoutes[0]?.driver?.name || 'Not assigned'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <div className="text-sm">
+                <p className="text-gray-500">Conductor</p>
+                <p className="font-medium text-gray-900">
+                  {bus.busRoutes[0]?.conductor?.name || 'Not assigned'}
+                </p>
+              </div>
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="flex items-center">
-              <DollarSign className="h-5 w-5 text-gray-400 mr-2" />
-              <div className="text-sm">
-                <p className="text-gray-500">Total Expenses</p>
-                <p className="font-medium text-gray-900">{bus._count.expenses} records</p>
-              </div>
+      </div>
+
+      {/* Quick Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Total Expenses</p>
+              <p className="text-xl font-bold text-gray-900">
+                ₹{bus.totalExpenses.toLocaleString()}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">{bus._count.expenses} records</p>
             </div>
-            <div className="flex items-center">
-              <FileText className="h-5 w-5 text-gray-400 mr-2" />
-              <div className="text-sm">
-                <p className="text-gray-500">Documents</p>
-                <p className="font-medium text-gray-900">{bus._count.documents} files</p>
-              </div>
+            <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-blue-600" />
             </div>
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-gray-400 mr-2" />
-              <div className="text-sm">
-                <p className="text-gray-500">Pending Reminders</p>
-                <p className="font-medium text-gray-900">{bus._count.reminders}</p>
-              </div>
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Average Mileage</p>
+              <p className="text-xl font-bold text-gray-900">
+                {bus.mileage > 0 ? `${bus.mileage} km/L` : 'No data'}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {bus.mileageData.fuelRecordsCount} fuel records
+              </p>
+            </div>
+            <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+              <Gauge className="h-5 w-5 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Active Students</p>
+              <p className="text-xl font-bold text-gray-900">{bus._count.students}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                of {bus.seatingCapacity} capacity
+              </p>
+            </div>
+            <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <Users className="h-5 w-5 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="card p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Pending Alerts</p>
+              <p className="text-xl font-bold text-gray-900">{bus._count.reminders}</p>
+              <p className="text-xs text-gray-400 mt-1">Requires attention</p>
+            </div>
+            <div className="h-10 w-10 bg-yellow-100 rounded-full flex items-center justify-center">
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
             </div>
           </div>
         </div>
@@ -280,16 +308,6 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'overview'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Overview
-          </button>
           <button
             onClick={() => setActiveTab('students')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -310,24 +328,10 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           >
             Documents
           </button>
-          <button
-            onClick={() => setActiveTab('insurance')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'insurance'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Insurance
-          </button>
         </nav>
       </div>
 
       {/* Tab Content */}
-      {activeTab === 'overview' && (
-        <BusOverview bus={bus} />
-      )}
-
       {activeTab === 'students' && (
         <BusStudentsList busId={busId} seatingCapacity={bus.seatingCapacity} />
       )}
@@ -337,15 +341,6 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           <BusDocumentUploader busId={busId} onUploadSuccess={fetchBusDetails} />
           <BusDocumentList busId={busId} />
         </div>
-      )}
-
-      {activeTab === 'insurance' && (
-        <InsuranceTracker
-          busId={busId}
-          insuranceExpiry={bus.insuranceExpiry}
-          insuranceReminder={bus.insuranceReminder}
-          onUpdate={fetchBusDetails}
-        />
       )}
     </div>
   )
