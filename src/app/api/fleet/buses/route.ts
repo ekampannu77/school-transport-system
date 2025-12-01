@@ -263,6 +263,40 @@ export async function PUT(request: NextRequest) {
       totalDistanceKm,
     } = validation.data
 
+    // Check if registration number or chassis number is already used by another bus
+    const existingBusWithSameDetails = await prisma.bus.findFirst({
+      where: {
+        AND: [
+          { id: { not: id } }, // Exclude the current bus
+          {
+            OR: [
+              { registrationNumber },
+              { chassisNumber },
+            ],
+          },
+        ],
+      },
+      select: {
+        registrationNumber: true,
+        chassisNumber: true,
+      },
+    })
+
+    if (existingBusWithSameDetails) {
+      const conflictField = existingBusWithSameDetails.registrationNumber === registrationNumber
+        ? 'registration number'
+        : 'chassis number'
+      fleetLogger.info('Bus with same details exists', {
+        conflictField,
+        registrationNumber,
+        chassisNumber,
+      })
+      return NextResponse.json(
+        { error: `Another bus with this ${conflictField} already exists` },
+        { status: 409 }
+      )
+    }
+
     // Check if driver is already assigned to another bus
     if (primaryDriverId) {
       const existingAssignment = await prisma.bus.findFirst({
