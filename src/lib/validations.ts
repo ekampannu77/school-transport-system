@@ -18,6 +18,14 @@ export const registerSchema = z.object({
 // ============================================
 // Bus Schemas
 // ============================================
+
+// Helper for optional date fields that may receive empty strings from forms
+const optionalDateString = z.string()
+  .transform(val => val === '' ? null : val)
+  .nullable()
+  .optional()
+  .refine((date) => !date || !isNaN(Date.parse(date)), 'Invalid date')
+
 const baseBusSchema = z.object({
   registrationNumber: z.string().min(1, 'Registration number is required').max(20),
   chassisNumber: z.string().min(1, 'Chassis number is required').max(50),
@@ -25,9 +33,9 @@ const baseBusSchema = z.object({
   purchaseDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid purchase date'),
   primaryDriverId: z.string().optional().nullable(),
   conductorId: z.string().optional().nullable(),
-  fitnessExpiry: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid fitness expiry date').optional().nullable(),
-  registrationExpiry: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid registration expiry date').optional().nullable(),
-  insuranceExpiry: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid insurance expiry date').optional().nullable(),
+  fitnessExpiry: optionalDateString,
+  registrationExpiry: optionalDateString,
+  insuranceExpiry: optionalDateString,
   ownershipType: z.enum(['SCHOOL_OWNED', 'PRIVATE_OWNED']).default('SCHOOL_OWNED'),
   privateOwnerName: z.string().max(100).optional().nullable(),
   privateOwnerContact: z.string().max(20).optional().nullable(),
@@ -53,7 +61,7 @@ export const createBusSchema = baseBusSchema.refine(
 )
 
 export const updateBusSchema = baseBusSchema.extend({
-  id: z.string().uuid('Invalid bus ID'),
+  id: z.string().min(1, 'Bus ID is required'),
 }).refine(
   busRefinement,
   { message: 'Private owner name is required for private buses', path: ['privateOwnerName'] }
@@ -68,7 +76,7 @@ const baseDriverSchema = z.object({
   licenseNumber: z.string().max(50).optional().nullable(),
   phone: z.string().min(1, 'Phone is required').max(20),
   address: z.string().max(500).optional().nullable(),
-  licenseExpiry: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid license expiry date').optional().nullable(),
+  licenseExpiry: optionalDateString,
   aadharNumber: z.string().max(20).optional().nullable(),
   status: z.enum(['active', 'inactive', 'suspended']).default('active'),
 })
@@ -86,7 +94,7 @@ export const createDriverSchema = baseDriverSchema.refine(
 )
 
 export const updateDriverSchema = baseDriverSchema.extend({
-  id: z.string().uuid('Invalid driver ID'),
+  id: z.string().min(1, 'Driver ID is required'),
 }).refine(
   driverRefinement,
   { message: 'License number and expiry are required for drivers', path: ['licenseNumber'] }
@@ -104,22 +112,22 @@ export const createStudentSchema = z.object({
   parentName: z.string().min(1, 'Parent name is required').max(100),
   parentContact: z.string().min(1, 'Parent contact is required').max(20),
   emergencyContact: z.string().max(20).optional().nullable(),
-  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid start date').optional(),
-  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid end date').optional().nullable(),
-  busId: z.string().uuid('Invalid bus ID'),
+  startDate: optionalDateString,
+  endDate: optionalDateString,
+  busId: z.string().min(1, 'Bus ID is required'),
   feeWaiverPercent: z.coerce.number().min(0).max(100).optional().default(0),
   isActive: z.boolean().optional().default(true),
 })
 
 export const updateStudentSchema = createStudentSchema.partial().extend({
-  id: z.string().uuid('Invalid student ID'),
+  id: z.string().min(1, 'Student ID is required'),
 })
 
 // ============================================
 // Payment Schemas
 // ============================================
 export const createPaymentSchema = z.object({
-  studentId: z.string().uuid('Invalid student ID'),
+  studentId: z.string().min(1, 'Student ID is required'),
   amount: z.coerce.number().positive('Amount must be positive'),
   quarter: z.coerce.number().int().min(1).max(4, 'Quarter must be 1, 2, 3, or 4'),
   academicYear: z.string().min(1, 'Academic year is required').regex(/^\d{4}-\d{4}$/, 'Academic year must be in format YYYY-YYYY'),
@@ -129,7 +137,7 @@ export const createPaymentSchema = z.object({
   bankName: z.string().max(100).optional().nullable(),
   collectedBy: z.string().max(100).optional().nullable(),
   remarks: z.string().max(500).optional().nullable(),
-  paymentDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid payment date').optional(),
+  paymentDate: optionalDateString,
 })
 
 // ============================================
@@ -143,24 +151,24 @@ export const createRouteSchema = z.object({
 })
 
 export const updateRouteSchema = createRouteSchema.partial().extend({
-  id: z.string().uuid('Invalid route ID'),
+  id: z.string().min(1, 'Route ID is required'),
 })
 
 export const assignBusToRouteSchema = z.object({
-  busId: z.string().uuid('Invalid bus ID'),
-  routeId: z.string().uuid('Invalid route ID'),
-  driverId: z.string().uuid('Invalid driver ID').optional().nullable(),
-  conductorId: z.string().uuid('Invalid conductor ID').optional().nullable(),
+  busId: z.string().min(1, 'Bus ID is required'),
+  routeId: z.string().min(1, 'Route ID is required'),
+  driverId: z.string().optional().nullable(),
+  conductorId: z.string().optional().nullable(),
   academicTerm: z.string().min(1, 'Academic term is required').max(50),
-  startDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid start date').optional(),
-  endDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid end date').optional().nullable(),
+  startDate: optionalDateString,
+  endDate: optionalDateString,
 })
 
 // ============================================
 // Expense Schemas
 // ============================================
 export const createExpenseSchema = z.object({
-  busId: z.string().uuid('Invalid bus ID'),
+  busId: z.string().min(1, 'Bus ID is required'),
   category: z.enum(['Fuel', 'Maintenance', 'Salary', 'Insurance', 'Other']),
   amount: z.coerce.number().positive('Amount must be positive'),
   date: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid date'),
@@ -185,7 +193,7 @@ export const createFuelPurchaseSchema = z.object({
 })
 
 export const createFuelDispenseSchema = z.object({
-  busId: z.string().uuid('Invalid bus ID'),
+  busId: z.string().min(1, 'Bus ID is required'),
   date: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid date'),
   quantity: z.coerce.number().positive('Quantity must be positive'),
   odometerReading: z.coerce.number().min(0).optional().nullable(),
@@ -197,7 +205,7 @@ export const createFuelDispenseSchema = z.object({
 // Bus Owner Payment Schemas
 // ============================================
 export const createBusOwnerPaymentSchema = z.object({
-  busId: z.string().uuid('Invalid bus ID'),
+  busId: z.string().min(1, 'Bus ID is required'),
   amount: z.coerce.number().positive('Amount must be positive'),
   paymentDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid payment date'),
   periodStartDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid period start date'),
@@ -212,14 +220,14 @@ export const createBusOwnerPaymentSchema = z.object({
 // Alert Schemas
 // ============================================
 export const resolveReminderSchema = z.object({
-  reminderId: z.string().uuid('Invalid reminder ID'),
+  reminderId: z.string().min(1, 'Reminder ID is required'),
 })
 
 // ============================================
 // ID Validation Schema
 // ============================================
 export const idParamSchema = z.object({
-  id: z.string().uuid('Invalid ID format'),
+  id: z.string().min(1, 'ID is required'),
 })
 
 // ============================================
