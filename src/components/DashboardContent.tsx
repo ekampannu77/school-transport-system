@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import StatCard from './StatCard'
 import AlertCard from './AlertCard'
-import { Bus, Users, DollarSign, AlertTriangle, AlertCircle, Info } from 'lucide-react'
+import { Bus, Users, DollarSign, AlertTriangle, AlertCircle, Info, Calendar, ChevronDown } from 'lucide-react'
 import { ExpiryAlert } from '@/lib/services/alerts'
 
 interface FleetOverview {
@@ -22,6 +22,22 @@ interface FleetOverview {
   }
 }
 
+interface MonthOption {
+  year: number
+  month: number
+}
+
+interface MonthlyExpensesData {
+  total: number
+  selectedMonth: { year: number; month: number }
+  availableMonths: MonthOption[]
+}
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+]
+
 interface AlertsData {
   alerts: ExpiryAlert[]
   criticalCount: number
@@ -33,6 +49,10 @@ export default function DashboardContent() {
   const [overview, setOverview] = useState<FleetOverview | null>(null)
   const [alerts, setAlerts] = useState<AlertsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [monthlyExpenses, setMonthlyExpenses] = useState<MonthlyExpensesData | null>(null)
+  const [selectedYear, setSelectedYear] = useState<number | null>(null)
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
+  const [expensesInitialized, setExpensesInitialized] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -56,6 +76,66 @@ export default function DashboardContent() {
 
     fetchData()
   }, [])
+
+  // Fetch monthly expenses data
+  useEffect(() => {
+    async function fetchMonthlyExpenses() {
+      try {
+        const now = new Date()
+        const response = await fetch(
+          `/api/fleet/expenses/monthly?year=${now.getFullYear()}&month=${now.getMonth() + 1}`
+        )
+        const data = await response.json()
+        setMonthlyExpenses(data)
+
+        // Set initial selection to most recent month with data
+        if (data.availableMonths && data.availableMonths.length > 0) {
+          setSelectedYear(data.availableMonths[0].year)
+          setSelectedMonth(data.availableMonths[0].month)
+        } else {
+          setSelectedYear(now.getFullYear())
+          setSelectedMonth(now.getMonth() + 1)
+        }
+        setExpensesInitialized(true)
+      } catch (error) {
+        console.error('Error fetching monthly expenses:', error)
+        setExpensesInitialized(true)
+      }
+    }
+
+    if (!expensesInitialized) {
+      fetchMonthlyExpenses()
+    }
+  }, [expensesInitialized])
+
+  // Fetch expenses when month selection changes
+  useEffect(() => {
+    async function fetchSelectedMonthExpenses() {
+      if (!expensesInitialized || !selectedYear || !selectedMonth) return
+
+      try {
+        const response = await fetch(
+          `/api/fleet/expenses/monthly?year=${selectedYear}&month=${selectedMonth}`
+        )
+        const data = await response.json()
+        setMonthlyExpenses(data)
+      } catch (error) {
+        console.error('Error fetching monthly expenses:', error)
+      }
+    }
+
+    fetchSelectedMonthExpenses()
+  }, [selectedYear, selectedMonth, expensesInitialized])
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const [year, month] = e.target.value.split('-').map(Number)
+    setSelectedYear(year)
+    setSelectedMonth(month)
+  }
+
+  const formatMonthLabel = (year: number, month: number) => {
+    return `${MONTH_NAMES[month - 1]} ${year}`
+  }
 
   if (loading) {
     return (
@@ -81,13 +161,40 @@ export default function DashboardContent() {
     <div className="space-y-6">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Expenses (This Month)"
-          value={`₹${overview?.expenses.thisMonth.toLocaleString() || 0}`}
-          icon={DollarSign}
-          subtitle="All categories combined"
-          href="/expenses"
-        />
+        {/* Monthly Expenses Card with Month Selector */}
+        <div className="card p-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm font-medium text-gray-500">Total Expenses</p>
+              </div>
+              {monthlyExpenses?.availableMonths && monthlyExpenses.availableMonths.length > 0 ? (
+                <select
+                  value={selectedYear && selectedMonth ? `${selectedYear}-${selectedMonth}` : ''}
+                  onChange={handleMonthChange}
+                  className="text-xs px-2 py-1 border border-gray-200 rounded-md bg-gray-50 text-gray-600 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 mb-2"
+                >
+                  {monthlyExpenses.availableMonths.map((option) => (
+                    <option key={`${option.year}-${option.month}`} value={`${option.year}-${option.month}`}>
+                      {formatMonthLabel(option.year, option.month)}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-xs text-gray-400 mb-2">No expense data</p>
+              )}
+              <p className="text-2xl font-bold text-gray-900">
+                ₹{(monthlyExpenses?.total || 0).toLocaleString()}
+              </p>
+              <a href="/expenses" className="text-xs text-primary-600 hover:text-primary-700 mt-1 inline-block">
+                View all expenses →
+              </a>
+            </div>
+            <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <DollarSign className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
         <StatCard
           title="Buses on Road"
           value={overview?.buses.total || 0}
