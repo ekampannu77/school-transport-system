@@ -47,17 +47,19 @@ export default function FeeCollectionPage() {
 
   const fetchStudents = async () => {
     try {
-      const response = await fetch('/api/students')
-      const data = await response.json()
+      // Fetch all active students with a large page size
+      const response = await fetch('/api/students?isActive=true&pageSize=1000')
+      const result = await response.json()
 
-      if (Array.isArray(data)) {
-        // Only show active students
-        const activeStudents = data.filter(s => s.isActive)
-        setStudents(activeStudents)
-        setFilteredStudents(activeStudents)
+      // Handle both paginated response and direct array response
+      const studentList = Array.isArray(result) ? result : (result.data || [])
 
-        // Fetch payments for all students
-        fetchPaymentsForStudents(activeStudents)
+      setStudents(studentList)
+      setFilteredStudents(studentList)
+
+      // Fetch payments for all students
+      if (studentList.length > 0) {
+        fetchPaymentsForStudents(studentList)
       }
     } catch (error) {
       console.error('Error fetching students:', error)
