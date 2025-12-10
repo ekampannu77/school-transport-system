@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Calendar, DollarSign, Fuel, Wrench, Shield, MoreHorizontal } from 'lucide-react'
+import { Calendar, DollarSign, Fuel, Wrench, Shield, MoreHorizontal, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/dateUtils'
 
 interface Expense {
@@ -54,6 +54,7 @@ export default function BusMonthlyExpenses({ busId }: { busId: string }) {
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
   const [initialized, setInitialized] = useState(false)
+  const [deleting, setDeleting] = useState<string | null>(null)
 
   // Initial fetch to get available months
   useEffect(() => {
@@ -122,6 +123,33 @@ export default function BusMonthlyExpenses({ busId }: { busId: string }) {
     const [year, month] = e.target.value.split('-').map(Number)
     setSelectedYear(year)
     setSelectedMonth(month)
+  }
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!confirm('Are you sure you want to delete this expense? This action cannot be undone.')) {
+      return
+    }
+
+    setDeleting(expenseId)
+    try {
+      const response = await fetch(`/api/expenses/log?id=${expenseId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete expense')
+      }
+
+      // Refresh the data after successful deletion
+      // Reset initialized to refetch available months in case this was the last expense for a month
+      setInitialized(false)
+    } catch (error) {
+      console.error('Error deleting expense:', error)
+      alert(error instanceof Error ? error.message : 'Failed to delete expense')
+    } finally {
+      setDeleting(null)
+    }
   }
 
   // Use available months from API data (months that have expense records)
@@ -221,10 +249,22 @@ export default function BusMonthlyExpenses({ busId }: { busId: string }) {
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center gap-3">
                     <p className="text-lg font-semibold text-gray-900">
                       ₹{expense.amount.toLocaleString()}
                     </p>
+                    <button
+                      onClick={() => handleDeleteExpense(expense.id)}
+                      disabled={deleting === expense.id}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors disabled:opacity-50"
+                      title="Delete expense"
+                    >
+                      {deleting === expense.id ? (
+                        <div className="h-4 w-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 </div>
               </div>
