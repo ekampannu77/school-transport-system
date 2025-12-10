@@ -5,6 +5,7 @@ import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users, CheckC
 import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
 import BusStudentsList from './BusStudentsList'
+import BusMonthlyExpenses from './BusMonthlyExpenses'
 import { formatDate, calculateStudentCapacity } from '@/lib/dateUtils'
 
 // Helper component to show expiry status with color coding
@@ -117,7 +118,7 @@ interface BusData {
 export default function BusDetailsContent({ busId }: { busId: string }) {
   const [bus, setBus] = useState<BusData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'students' | 'documents'>('students')
+  const [activeTab, setActiveTab] = useState<'students' | 'documents' | 'expenses'>('students')
 
   useEffect(() => {
     fetchBusDetails()
@@ -329,6 +330,16 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           >
             Documents
           </button>
+          <button
+            onClick={() => setActiveTab('expenses')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'expenses'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Monthly Expenses
+          </button>
         </nav>
       </div>
 
@@ -342,6 +353,10 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
           <BusDocumentUploader busId={busId} onUploadSuccess={fetchBusDetails} />
           <BusDocumentList busId={busId} />
         </div>
+      )}
+
+      {activeTab === 'expenses' && (
+        <BusMonthlyExpenses busId={busId} />
       )}
     </div>
   )
