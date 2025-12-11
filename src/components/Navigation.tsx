@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
-import { Bus, DollarSign, Home, User, FileText, Wallet, Users, Fuel, ChevronDown, Car } from 'lucide-react'
+import { Bus, DollarSign, Home, User, FileText, Wallet, Users, Fuel, ChevronDown, Car, Droplet } from 'lucide-react'
 import ExportModal from './ExportModal'
 
 interface DropdownItem {
@@ -100,9 +100,12 @@ export default function Navigation() {
       ]
     },
     {
-      label: 'Fuel',
+      label: 'Fuel & Urea',
       icon: Fuel,
-      href: '/fuel-inventory'
+      items: [
+        { href: '/fuel-inventory', label: 'Fuel Inventory', icon: Fuel },
+        { href: '/urea-inventory', label: 'Urea Inventory', icon: Droplet },
+      ]
     },
     {
       label: 'Personal Vehicles',
@@ -140,7 +143,8 @@ export default function Navigation() {
     { href: '/fees', label: 'Fees', icon: Wallet },
     { href: '/private-buses', label: 'Private Buses', icon: Users },
     { href: '/expenses', label: 'Expenses', icon: DollarSign },
-    { href: '/fuel-inventory', label: 'Fuel', icon: Fuel },
+    { href: '/fuel-inventory', label: 'Fuel Inventory', icon: Fuel },
+    { href: '/urea-inventory', label: 'Urea Inventory', icon: Droplet },
     { href: '/personal-vehicles', label: 'Personal Vehicles', icon: Car },
   ]
 
