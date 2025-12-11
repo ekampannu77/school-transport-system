@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, TrendingUp, TrendingDown, Droplet, AlertTriangle, Bus, Calendar, Filter, X } from 'lucide-react'
+import { Plus, Trash2, TrendingUp, TrendingDown, Droplet, AlertTriangle, Bus, Calendar, Filter, X, Info } from 'lucide-react'
 import { useToast } from '@/components/Toast'
 import { Button } from '@/components/Modal'
 import { formatDate } from '@/lib/dateUtils'
+import Link from 'next/link'
 
 interface UreaPurchase {
   id: string
@@ -29,11 +30,6 @@ interface UreaDispense {
   }
 }
 
-interface BusOption {
-  id: string
-  registrationNumber: string
-}
-
 interface InventorySummary {
   currentStock: number
   totalPurchased: number
@@ -54,11 +50,9 @@ export default function UreaInventoryPage() {
   const [inventory, setInventory] = useState<InventorySummary | null>(null)
   const [purchases, setPurchases] = useState<UreaPurchase[]>([])
   const [dispenses, setDispenses] = useState<UreaDispense[]>([])
-  const [buses, setBuses] = useState<BusOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'purchase' | 'dispense'>('purchase')
   const toast = useToast()
 
   // Date filters
@@ -77,19 +71,10 @@ export default function UreaInventoryPage() {
     notes: '',
   })
 
-  const [dispenseForm, setDispenseForm] = useState({
-    busId: '',
-    date: new Date().toISOString().split('T')[0],
-    quantity: '',
-    dispensedBy: '',
-    notes: '',
-  })
-
   useEffect(() => {
     fetchInventory()
     fetchPurchases()
     fetchDispenses()
-    fetchBuses()
   }, [])
 
   const fetchInventory = async () => {
@@ -123,19 +108,6 @@ export default function UreaInventoryPage() {
       setDispenses(data)
     } catch (error) {
       console.error('Error fetching dispenses:', error)
-    }
-  }
-
-  const fetchBuses = async () => {
-    try {
-      const response = await fetch('/api/fleet')
-      const data = await response.json()
-      setBuses(data.map((bus: { id: string; registrationNumber: string }) => ({
-        id: bus.id,
-        registrationNumber: bus.registrationNumber,
-      })))
-    } catch (error) {
-      console.error('Error fetching buses:', error)
     }
   }
 
@@ -178,44 +150,6 @@ export default function UreaInventoryPage() {
       toast.success('Urea purchase recorded successfully!')
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Failed to record purchase'
-      toast.error(message)
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleDispenseSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSubmitting(true)
-
-    try {
-      const response = await fetch('/api/urea/dispenses', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dispenseForm),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to dispense urea')
-      }
-
-      // Reset form
-      setDispenseForm({
-        busId: '',
-        date: new Date().toISOString().split('T')[0],
-        quantity: '',
-        dispensedBy: '',
-        notes: '',
-      })
-
-      // Refresh data
-      await Promise.all([fetchInventory(), fetchDispenses()])
-      toast.success('Urea dispensed successfully!')
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Failed to dispense urea'
       toast.error(message)
     } finally {
       setSubmitting(false)
@@ -497,235 +431,127 @@ export default function UreaInventoryPage() {
           </div>
         )}
 
-        {/* Tab Selector */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('purchase')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              activeTab === 'purchase'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Plus className="h-4 w-4 inline mr-2" />
-            Record Purchase
-          </button>
-          <button
-            onClick={() => setActiveTab('dispense')}
-            className={`px-4 py-2 rounded-lg font-medium ${
-              activeTab === 'dispense'
-                ? 'bg-cyan-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            <Bus className="h-4 w-4 inline mr-2" />
-            Dispense to Bus
-          </button>
+        {/* Info Banner - Dispense through Expenses */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <p className="text-sm text-blue-800 font-medium">How to dispense urea to buses</p>
+              <p className="text-sm text-blue-700 mt-1">
+                To dispense urea to a bus, go to{' '}
+                <Link href="/expenses" className="font-medium underline hover:text-blue-900">
+                  Fleet → Expenses
+                </Link>{' '}
+                and log a &quot;Urea&quot; expense. This will automatically deduct from stock and record the expense.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Purchase Form */}
-        {activeTab === 'purchase' && (
-          <div className="card p-6 mb-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Plus className="h-5 w-5 text-cyan-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Record Urea Purchase</h2>
-            </div>
+        <div className="card p-6 mb-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Plus className="h-5 w-5 text-cyan-600" />
+            <h2 className="text-xl font-semibold text-gray-900">Record Urea Purchase</h2>
+          </div>
 
-            <form onSubmit={handlePurchaseSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={purchaseForm.date}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, date: e.target.value })}
-                    className="input-field"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity (Litres) *
-                  </label>
-                  <input
-                    type="number"
-                    value={purchaseForm.quantity}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, quantity: e.target.value })}
-                    className="input-field"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price per Litre *
-                  </label>
-                  <input
-                    type="number"
-                    value={purchaseForm.pricePerLitre}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, pricePerLitre: e.target.value })}
-                    className="input-field"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="bg-cyan-50 p-4 rounded-lg border border-cyan-200">
-                <p className="text-sm text-cyan-800">
-                  Total Cost: <span className="font-bold text-lg">{formatCurrency(calculateTotalCost())}</span>
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Vendor (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={purchaseForm.vendor}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, vendor: e.target.value })}
-                    className="input-field"
-                    placeholder="Vendor name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Invoice Number (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={purchaseForm.invoiceNumber}
-                    onChange={(e) => setPurchaseForm({ ...purchaseForm, invoiceNumber: e.target.value })}
-                    className="input-field"
-                    placeholder="Invoice number"
-                  />
-                </div>
-              </div>
-
+          <form onSubmit={handlePurchaseSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Notes (Optional)
+                  Date *
                 </label>
-                <textarea
-                  value={purchaseForm.notes}
-                  onChange={(e) => setPurchaseForm({ ...purchaseForm, notes: e.target.value })}
+                <input
+                  type="date"
+                  value={purchaseForm.date}
+                  onChange={(e) => setPurchaseForm({ ...purchaseForm, date: e.target.value })}
                   className="input-field"
-                  rows={3}
-                  placeholder="Additional notes"
+                  required
                 />
               </div>
-
-              <Button type="submit" loading={submitting} className="w-full md:w-auto">
-                Record Purchase
-              </Button>
-            </form>
-          </div>
-        )}
-
-        {/* Dispense Form */}
-        {activeTab === 'dispense' && (
-          <div className="card p-6 mb-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Bus className="h-5 w-5 text-cyan-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Dispense Urea to Bus</h2>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity (Litres) *
+                </label>
+                <input
+                  type="number"
+                  value={purchaseForm.quantity}
+                  onChange={(e) => setPurchaseForm({ ...purchaseForm, quantity: e.target.value })}
+                  className="input-field"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price per Litre *
+                </label>
+                <input
+                  type="number"
+                  value={purchaseForm.pricePerLitre}
+                  onChange={(e) => setPurchaseForm({ ...purchaseForm, pricePerLitre: e.target.value })}
+                  className="input-field"
+                  placeholder="0.00"
+                  step="0.01"
+                  min="0"
+                  required
+                />
+              </div>
             </div>
 
-            <form onSubmit={handleDispenseSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Select Bus *
-                  </label>
-                  <select
-                    value={dispenseForm.busId}
-                    onChange={(e) => setDispenseForm({ ...dispenseForm, busId: e.target.value })}
-                    className="input-field"
-                    required
-                  >
-                    <option value="">Select a bus</option>
-                    {buses.map((bus) => (
-                      <option key={bus.id} value={bus.id}>
-                        {bus.registrationNumber}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={dispenseForm.date}
-                    onChange={(e) => setDispenseForm({ ...dispenseForm, date: e.target.value })}
-                    className="input-field"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Quantity (Litres) *
-                  </label>
-                  <input
-                    type="number"
-                    value={dispenseForm.quantity}
-                    onChange={(e) => setDispenseForm({ ...dispenseForm, quantity: e.target.value })}
-                    className="input-field"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
+            <div className="bg-cyan-50 p-4 rounded-lg border border-cyan-200">
+              <p className="text-sm text-cyan-800">
+                Total Cost: <span className="font-bold text-lg">{formatCurrency(calculateTotalCost())}</span>
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Vendor (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={purchaseForm.vendor}
+                  onChange={(e) => setPurchaseForm({ ...purchaseForm, vendor: e.target.value })}
+                  className="input-field"
+                  placeholder="Vendor name"
+                />
               </div>
-
-              {inventory && (
-                <div className="bg-gray-50 p-3 rounded-lg border text-sm text-gray-600">
-                  Available stock: <span className="font-bold text-gray-900">{inventory.currentStock.toFixed(2)} L</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Dispensed By (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={dispenseForm.dispensedBy}
-                    onChange={(e) => setDispenseForm({ ...dispenseForm, dispensedBy: e.target.value })}
-                    className="input-field"
-                    placeholder="Name of person"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Notes (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={dispenseForm.notes}
-                    onChange={(e) => setDispenseForm({ ...dispenseForm, notes: e.target.value })}
-                    className="input-field"
-                    placeholder="Additional notes"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Invoice Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={purchaseForm.invoiceNumber}
+                  onChange={(e) => setPurchaseForm({ ...purchaseForm, invoiceNumber: e.target.value })}
+                  className="input-field"
+                  placeholder="Invoice number"
+                />
               </div>
+            </div>
 
-              <Button type="submit" loading={submitting} className="w-full md:w-auto">
-                Dispense Urea
-              </Button>
-            </form>
-          </div>
-        )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Notes (Optional)
+              </label>
+              <textarea
+                value={purchaseForm.notes}
+                onChange={(e) => setPurchaseForm({ ...purchaseForm, notes: e.target.value })}
+                className="input-field"
+                rows={3}
+                placeholder="Additional notes"
+              />
+            </div>
+
+            <Button type="submit" loading={submitting} className="w-full md:w-auto">
+              Record Purchase
+            </Button>
+          </form>
+        </div>
 
         {/* Purchase History */}
         <div className="card p-6 mb-6">
