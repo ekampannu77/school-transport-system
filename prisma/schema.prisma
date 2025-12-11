@@ -294,6 +294,7 @@ enum DriverRole {
 
 enum ExpenseCategory {
   Fuel
+  Urea
   Maintenance
   Salary
   Insurance
