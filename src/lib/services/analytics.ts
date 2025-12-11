@@ -293,6 +293,7 @@ export async function aggregateExpensesByCategory(
   // Ensure all categories are present
   const allCategories: Record<ExpenseCategory, number> = {
     Fuel: byCategory.Fuel || 0,
+    Urea: byCategory.Urea || 0,
     Maintenance: byCategory.Maintenance || 0,
     Salary: byCategory.Salary || 0,
     Insurance: byCategory.Insurance || 0,
