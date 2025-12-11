@@ -203,6 +203,26 @@ export const createFuelDispenseSchema = z.object({
 })
 
 // ============================================
+// Urea Schemas
+// ============================================
+export const createUreaPurchaseSchema = z.object({
+  date: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid date'),
+  quantity: z.coerce.number().positive('Quantity must be positive'),
+  pricePerLitre: z.coerce.number().positive('Price per litre must be positive'),
+  vendor: z.string().max(100).optional().nullable(),
+  invoiceNumber: z.string().max(50).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+})
+
+export const createUreaDispenseSchema = z.object({
+  busId: z.string().min(1, 'Bus ID is required'),
+  date: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid date'),
+  quantity: z.coerce.number().positive('Quantity must be positive'),
+  dispensedBy: z.string().max(100).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
+})
+
+// ============================================
 // Bus Owner Payment Schemas
 // ============================================
 export const createBusOwnerPaymentSchema = z.object({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createUreaDispenseSchema, validateRequest } from '@/lib/validations'
 
 // GET all urea dispenses
 export async function GET(request: NextRequest) {
@@ -7,7 +8,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const busId = searchParams.get('busId')
 
-    const where: any = {}
+    const where: { busId?: string } = {}
     if (busId) where.busId = busId
 
     const dispenses = await prisma.ureaDispense.findMany({
@@ -38,15 +39,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { busId, date, quantity, dispensedBy, notes } = body
 
-    // Validation
-    if (!busId || !date || !quantity) {
+    // Validate with Zod
+    const validation = validateRequest(createUreaDispenseSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+
+    const { busId, date, quantity, dispensedBy, notes } = validation.data
 
     // Check if bus exists
     const bus = await prisma.bus.findUnique({
@@ -77,7 +80,7 @@ export async function POST(request: NextRequest) {
     const totalDispensed = dispenses._sum.quantity || 0
     const currentStock = totalPurchased - totalDispensed
 
-    if (parseFloat(quantity) > currentStock) {
+    if (quantity > currentStock) {
       return NextResponse.json(
         { error: `Insufficient urea in stock. Available: ${currentStock} litres` },
         { status: 400 }
@@ -88,7 +91,7 @@ export async function POST(request: NextRequest) {
       data: {
         busId,
         date: new Date(date),
-        quantity: parseFloat(quantity),
+        quantity,
         dispensedBy: dispensedBy || null,
         notes: notes || null,
       },
@@ -102,10 +105,10 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(dispense, { status: 201 })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating urea dispense:', error)
     return NextResponse.json(
-      { error: 'Failed to create urea dispense', details: error.message },
+      { error: 'Failed to create urea dispense' },
       { status: 500 }
     )
   }
@@ -129,10 +132,10 @@ export async function DELETE(request: NextRequest) {
     })
 
     return NextResponse.json({ message: 'Dispense deleted successfully' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting urea dispense:', error)
 
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Dispense not found' },
         { status: 404 }
