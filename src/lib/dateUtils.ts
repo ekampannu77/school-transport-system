@@ -118,3 +118,22 @@ export function formatDaysRemaining(daysRemaining: number): string {
   if (daysRemaining === -1) return 'expired 1 day ago'
   return `expired ${Math.abs(daysRemaining)} days ago`
 }
+
+/**
+ * Get the current academic year in format 'YYYY-YY'
+ * Academic year runs from April to March
+ * e.g., April 2024 to March 2025 = '2024-25'
+ * @param date - Optional date to calculate for (defaults to now)
+ * @returns Academic year string like '2024-25'
+ */
+export function getCurrentAcademicYear(date: Date = new Date()): string {
+  const month = date.getMonth() // 0-11
+  const year = date.getFullYear()
+
+  // If month is April (3) or later, academic year starts this year
+  // If month is before April (0-2), academic year started last year
+  const startYear = month >= 3 ? year : year - 1
+  const endYear = startYear + 1
+
+  return `${startYear}-${endYear.toString().slice(-2)}`
+}

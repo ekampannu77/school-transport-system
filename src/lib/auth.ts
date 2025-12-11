@@ -81,7 +81,7 @@ export async function setAuthCookie(token: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 0, // Session cookie - expires when browser closes
+    maxAge: 60 * 60 * 24, // 1 day - matches JWT expiry
     path: '/',
   })
 }

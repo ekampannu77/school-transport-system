@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createUreaPurchaseSchema, validateRequest } from '@/lib/validations'
 
 // GET all urea purchases
 export async function GET() {
@@ -24,23 +25,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { date, quantity, pricePerLitre, vendor, invoiceNumber, notes } = body
 
-    // Validation
-    if (!date || !quantity || !pricePerLitre) {
+    // Validate with Zod
+    const validation = validateRequest(createUreaPurchaseSchema, body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: validation.error },
         { status: 400 }
       )
     }
 
-    const totalCost = parseFloat(quantity) * parseFloat(pricePerLitre)
+    const { date, quantity, pricePerLitre, vendor, invoiceNumber, notes } = validation.data
+    const totalCost = quantity * pricePerLitre
 
     const purchase = await prisma.ureaPurchase.create({
       data: {
         date: new Date(date),
-        quantity: parseFloat(quantity),
-        pricePerLitre: parseFloat(pricePerLitre),
+        quantity,
+        pricePerLitre,
         totalCost,
         vendor: vendor || null,
         invoiceNumber: invoiceNumber || null,
@@ -49,10 +51,10 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(purchase, { status: 201 })
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error creating urea purchase:', error)
     return NextResponse.json(
-      { error: 'Failed to create urea purchase', details: error.message },
+      { error: 'Failed to create urea purchase' },
       { status: 500 }
     )
   }
@@ -76,10 +78,10 @@ export async function DELETE(request: NextRequest) {
     })
 
     return NextResponse.json({ message: 'Purchase deleted successfully' })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting urea purchase:', error)
 
-    if (error.code === 'P2025') {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'P2025') {
       return NextResponse.json(
         { error: 'Purchase not found' },
         { status: 404 }

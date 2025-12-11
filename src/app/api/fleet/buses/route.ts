@@ -3,6 +3,7 @@ import { getAllBuses } from '@/lib/services/fleet'
 import { prisma } from '@/lib/prisma'
 import { createBusSchema, updateBusSchema, validateRequest } from '@/lib/validations'
 import { fleetLogger } from '@/lib/logger'
+import { getCurrentAcademicYear } from '@/lib/dateUtils'
 
 export async function GET() {
   try {
@@ -199,7 +200,7 @@ export async function POST(request: NextRequest) {
           driverId: primaryDriverId || null,
           conductorId: conductorId || null,
           routeId: route.id,
-          academicTerm: '2024-25',
+          academicTerm: getCurrentAcademicYear(),
           startDate: new Date(),
         },
       })
@@ -522,7 +523,7 @@ export async function PUT(request: NextRequest) {
             driverId: primaryDriverId || null,
             conductorId: conductorId || null,
             routeId: route.id,
-            academicTerm: '2024-25',
+            academicTerm: getCurrentAcademicYear(),
             startDate: new Date(),
           },
         })
