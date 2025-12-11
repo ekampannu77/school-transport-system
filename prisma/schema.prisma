@@ -37,6 +37,7 @@ model Bus {
   students           Student[]
   ownerPayments      BusOwnerPayment[]
   fuelDispenses      FuelDispense[]
+  ureaDispenses      UreaDispense[]
 
   @@index([primaryDriverId])
   @@index([ownershipType])
@@ -402,4 +403,36 @@ model PersonalVehicleFuelDispense {
   @@index([vehicleId])
   @@index([date])
   @@map("personal_vehicle_fuel_dispenses")
+}
+
+model UreaPurchase {
+  id              String         @id @default(cuid())
+  date            DateTime
+  quantity        Float          // in litres
+  pricePerLitre   Float          @map("price_per_litre")
+  totalCost       Float          @map("total_cost")
+  vendor          String?
+  invoiceNumber   String?        @map("invoice_number")
+  notes           String?
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@map("urea_purchases")
+}
+
+model UreaDispense {
+  id            String   @id @default(cuid())
+  busId         String   @map("bus_id")
+  date          DateTime
+  quantity      Float    // in litres
+  dispensedBy   String?  @map("dispensed_by")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  bus           Bus      @relation(fields: [busId], references: [id], onDelete: Cascade)
+
+  @@index([busId])
+  @@index([date])
+  @@map("urea_dispenses")
 }
