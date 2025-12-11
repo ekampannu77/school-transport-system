@@ -58,6 +58,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Additional validation for urea expenses
+    if (category === 'Urea') {
+      if (!litresFilled || !pricePerLitre) {
+        return NextResponse.json(
+          { error: 'Urea expenses require litresFilled and pricePerLitre' },
+          { status: 400 }
+        )
+      }
+
+      // Check urea inventory stock
+      const purchases = await prisma.ureaPurchase.aggregate({
+        _sum: {
+          quantity: true,
+        },
+      })
+
+      const dispenses = await prisma.ureaDispense.aggregate({
+        _sum: {
+          quantity: true,
+        },
+      })
+
+      const totalPurchased = purchases._sum.quantity || 0
+      const totalDispensed = dispenses._sum.quantity || 0
+      const currentStock = totalPurchased - totalDispensed
+
+      if (parseFloat(litresFilled) > currentStock) {
+        return NextResponse.json(
+          { error: `Insufficient urea in stock. Available: ${currentStock} litres` },
+          { status: 400 }
+        )
+      }
+    }
+
     // Use a transaction to create both expense and fuel dispense (if applicable)
     const result = await prisma.$transaction(async (tx) => {
       // Create expense
@@ -90,6 +124,18 @@ export async function POST(request: NextRequest) {
             date: new Date(date),
             quantity: parseFloat(litresFilled),
             odometerReading: odometerReading ? parseInt(odometerReading) : null,
+            notes: description || null,
+          },
+        })
+      }
+
+      // If urea expense, also create urea dispense record
+      if (category === 'Urea' && litresFilled) {
+        await tx.ureaDispense.create({
+          data: {
+            busId,
+            date: new Date(date),
+            quantity: parseFloat(litresFilled),
             notes: description || null,
           },
         })
@@ -182,7 +228,7 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Use a transaction to delete expense and related fuel dispense (if applicable)
+    // Use a transaction to delete expense and related fuel/urea dispense (if applicable)
     await prisma.$transaction(async (tx) => {
       // If it's a fuel expense, find and delete the corresponding fuel dispense
       if (expense.category === 'Fuel' && expense.litresFilled) {
@@ -199,6 +245,25 @@ export async function DELETE(request: NextRequest) {
         if (fuelDispense) {
           await tx.fuelDispense.delete({
             where: { id: fuelDispense.id },
+          })
+        }
+      }
+
+      // If it's a urea expense, find and delete the corresponding urea dispense
+      if (expense.category === 'Urea' && expense.litresFilled) {
+        // Find the urea dispense that matches this expense
+        // Match by busId, date, and quantity
+        const ureaDispense = await tx.ureaDispense.findFirst({
+          where: {
+            busId: expense.busId,
+            quantity: expense.litresFilled,
+            date: expense.date,
+          },
+        })
+
+        if (ureaDispense) {
+          await tx.ureaDispense.delete({
+            where: { id: ureaDispense.id },
           })
         }
       }
