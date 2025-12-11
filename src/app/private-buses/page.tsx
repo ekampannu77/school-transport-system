@@ -11,6 +11,7 @@ interface BusStats {
   privateOwnerContact: string | null
   privateOwnerBank: string | null
   schoolCommission: number
+  advancePayment: number
   studentCount: number
   totalRevenue: number
   commission: number
@@ -275,7 +276,7 @@ export default function PrivateBusesPage() {
                 </div>
 
                 {/* Financial Details */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <span className="text-sm text-blue-800">Fees Collected</span>
                     <span className="font-semibold text-blue-900">{formatCurrency(bus.totalRevenue)}</span>
@@ -284,9 +285,40 @@ export default function PrivateBusesPage() {
                     <span className="text-sm text-green-800">Paid to Owner</span>
                     <span className="font-semibold text-green-900">{formatCurrency(bus.totalPaid)}</span>
                   </div>
-                  <div className={`flex items-center justify-between p-3 rounded-lg border ${bus.amountOwing > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
-                    <span className={`text-sm ${bus.amountOwing > 0 ? 'text-red-800' : 'text-gray-600'}`}>Amount Owing</span>
-                    <span className={`font-semibold ${bus.amountOwing > 0 ? 'text-red-900' : 'text-gray-900'}`}>{formatCurrency(bus.amountOwing)}</span>
+                  {bus.advancePayment > 0 && (
+                    <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                      <span className="text-sm text-purple-800">Advance Given</span>
+                      <span className="font-semibold text-purple-900">{formatCurrency(bus.advancePayment)}</span>
+                    </div>
+                  )}
+                  <div className={`flex items-center justify-between p-3 rounded-lg border ${
+                    bus.amountOwing > 0
+                      ? 'bg-red-50 border-red-200'
+                      : bus.amountOwing < 0
+                        ? 'bg-yellow-50 border-yellow-200'
+                        : 'bg-gray-50 border-gray-200'
+                  }`}>
+                    <span className={`text-sm ${
+                      bus.amountOwing > 0
+                        ? 'text-red-800'
+                        : bus.amountOwing < 0
+                          ? 'text-yellow-800'
+                          : 'text-gray-600'
+                    }`}>
+                      {bus.amountOwing < 0 ? 'Advance Balance' : 'Amount Owing'}
+                    </span>
+                    <span className={`font-semibold ${
+                      bus.amountOwing > 0
+                        ? 'text-red-900'
+                        : bus.amountOwing < 0
+                          ? 'text-yellow-900'
+                          : 'text-gray-900'
+                    }`}>
+                      {bus.amountOwing < 0
+                        ? formatCurrency(Math.abs(bus.amountOwing))
+                        : formatCurrency(bus.amountOwing)
+                      }
+                    </span>
                   </div>
                 </div>
 
@@ -306,7 +338,6 @@ export default function PrivateBusesPage() {
                     <button
                       onClick={() => handleRecordPayment(bus)}
                       className="btn-primary text-sm"
-                      disabled={bus.amountOwing <= 0}
                     >
                       Record Payment
                     </button>
@@ -342,7 +373,10 @@ export default function PrivateBusesPage() {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Amount owing: {formatCurrency(selectedBus.amountOwing)}
+                  {selectedBus.amountOwing >= 0
+                    ? `Amount owing: ${formatCurrency(selectedBus.amountOwing)}`
+                    : `Advance balance remaining: ${formatCurrency(Math.abs(selectedBus.amountOwing))}`
+                  }
                 </p>
               </div>
 

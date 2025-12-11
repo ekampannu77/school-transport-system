@@ -43,6 +43,7 @@ const initialFormData = {
   privateOwnerContact: '',
   privateOwnerBank: '',
   schoolCommission: '0',
+  advancePayment: '0',
   routeName: '',
   startPoint: '',
   endPoint: '',
@@ -502,6 +503,26 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Percentage of revenue the school keeps
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Advance Payment (Optional)
+                </label>
+                <input
+                  type="number"
+                  value={formData.advancePayment}
+                  onChange={(e) =>
+                    setFormData({ ...formData, advancePayment: e.target.value })
+                  }
+                  className="input-field"
+                  placeholder="e.g., 50000"
+                  min="0"
+                  step="1"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Advance amount given to bus owner
                 </p>
               </div>
             </div>

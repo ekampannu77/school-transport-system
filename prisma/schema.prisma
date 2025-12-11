@@ -28,6 +28,7 @@ model Bus {
   privateOwnerContact String?          @map("private_owner_contact")
   privateOwnerBank   String?           @map("private_owner_bank")
   schoolCommission   Float?            @default(0) @map("school_commission")
+  advancePayment     Float?            @default(0) @map("advance_payment")
   documents          BusDocument[]
   busRoutes          BusRoute[]
   primaryDriver      Driver?           @relation("primaryDriver", fields: [primaryDriverId], references: [id], onDelete: SetNull)
