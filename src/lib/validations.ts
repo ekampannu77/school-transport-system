@@ -41,6 +41,7 @@ const baseBusSchema = z.object({
   privateOwnerContact: z.string().max(20).optional().nullable(),
   privateOwnerBank: z.string().max(100).optional().nullable(),
   schoolCommission: z.coerce.number().min(0).max(100).optional().default(0),
+  advancePayment: z.coerce.number().min(0).optional().default(0),
   routeName: z.string().max(100).optional().nullable(),
   startPoint: z.string().max(200).optional().nullable(),
   endPoint: z.string().max(200).optional().nullable(),

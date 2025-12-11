@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
         privateOwnerContact: true,
         privateOwnerBank: true,
         schoolCommission: true,
+        advancePayment: true,
         students: {
           where: {
             isActive: true,
@@ -70,8 +71,12 @@ export async function GET(request: NextRequest) {
       const commission = (totalRevenue * (bus.schoolCommission || 0)) / 100
       const netRevenue = totalRevenue - commission
 
-      // Amount owing = net revenue - total paid - total pending
-      const amountOwing = netRevenue - totalPaid - totalPending
+      // Advance payment given to owner
+      const advancePayment = bus.advancePayment || 0
+
+      // Amount owing = net revenue - total paid - total pending - advance payment
+      // If negative, owner owes school (advance not yet covered by fees)
+      const amountOwing = netRevenue - totalPaid - totalPending - advancePayment
 
       // Monthly expected revenue
       const monthlyExpected = bus.students.reduce((sum, student) => sum + student.monthlyFee, 0)
@@ -83,6 +88,7 @@ export async function GET(request: NextRequest) {
         privateOwnerContact: bus.privateOwnerContact,
         privateOwnerBank: bus.privateOwnerBank,
         schoolCommission: bus.schoolCommission || 0,
+        advancePayment,
         studentCount: bus.students.length,
         totalRevenue,
         commission,

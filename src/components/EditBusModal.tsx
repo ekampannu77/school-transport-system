@@ -29,6 +29,7 @@ interface Bus {
   privateOwnerContact?: string | null
   privateOwnerBank?: string | null
   schoolCommission?: number | null
+  advancePayment?: number | null
   primaryDriver?: {
     id: string
     name: string
@@ -83,6 +84,7 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
     privateOwnerContact: '',
     privateOwnerBank: '',
     schoolCommission: '',
+    advancePayment: '',
     routeName: '',
     startPoint: '',
     endPoint: '',
@@ -137,6 +139,7 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
         privateOwnerContact: bus.privateOwnerContact || '',
         privateOwnerBank: bus.privateOwnerBank || '',
         schoolCommission: bus.schoolCommission?.toString() || '',
+        advancePayment: bus.advancePayment?.toString() || '',
         routeName: currentRoute?.routeName || '',
         startPoint: currentRoute?.startPoint || '',
         endPoint: currentRoute?.endPoint || '',
@@ -350,7 +353,7 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    School Commission (₹)
+                    School Commission (%)
                   </label>
                   <input
                     type="number"
@@ -360,9 +363,30 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
                     }
                     className="input-field"
                     min="0"
-                    step="0.01"
-                    placeholder="Commission amount"
+                    max="100"
+                    step="0.1"
+                    placeholder="Commission percentage"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Advance Payment (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.advancePayment}
+                    onChange={(e) =>
+                      setFormData({ ...formData, advancePayment: e.target.value })
+                    }
+                    className="input-field"
+                    min="0"
+                    step="1"
+                    placeholder="Advance amount given to owner"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Advance amount given to bus owner
+                  </p>
                 </div>
               </div>
             </>
