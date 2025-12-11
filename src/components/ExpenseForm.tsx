@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, Fuel, AlertCircle, Clock } from 'lucide-react'
+import { Upload, Fuel, Droplet, AlertCircle, Clock } from 'lucide-react'
 import { calculateDaysRemaining } from '@/lib/dateUtils'
 
 interface Bus {
@@ -9,7 +9,7 @@ interface Bus {
   registrationNumber: string
 }
 
-interface FuelInfo {
+interface InventoryInfo {
   currentStock: number
   lastDispense: {
     date: string
@@ -22,8 +22,8 @@ export default function ExpenseForm() {
   const [buses, setBuses] = useState<Bus[]>([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
-  const [fuelInfo, setFuelInfo] = useState<FuelInfo | null>(null)
-  const [loadingFuelInfo, setLoadingFuelInfo] = useState(false)
+  const [inventoryInfo, setInventoryInfo] = useState<InventoryInfo | null>(null)
+  const [loadingInventoryInfo, setLoadingInventoryInfo] = useState(false)
   const [formData, setFormData] = useState({
     busId: '',
     category: 'Fuel',
@@ -49,25 +49,30 @@ export default function ExpenseForm() {
     fetchBuses()
   }, [])
 
-  // Fetch fuel inventory and last dispense when Fuel category is selected or bus changes
+  // Fetch inventory and last dispense when Fuel or Urea category is selected or bus changes
   useEffect(() => {
-    async function fetchFuelInfo() {
-      if (formData.category !== 'Fuel') {
-        setFuelInfo(null)
+    async function fetchInventoryInfo() {
+      const isFuelOrUrea = formData.category === 'Fuel' || formData.category === 'Urea'
+      if (!isFuelOrUrea) {
+        setInventoryInfo(null)
         return
       }
 
-      setLoadingFuelInfo(true)
+      setLoadingInventoryInfo(true)
       try {
-        // Fetch fuel inventory
-        const inventoryRes = await fetch('/api/fuel/inventory')
+        // Fetch inventory based on category
+        const inventoryEndpoint = formData.category === 'Fuel' ? '/api/fuel/inventory' : '/api/urea/inventory'
+        const inventoryRes = await fetch(inventoryEndpoint)
         const inventoryData = await inventoryRes.json()
 
         let lastDispense = null
 
         // Fetch last dispense for selected bus
         if (formData.busId) {
-          const dispensesRes = await fetch(`/api/fuel/dispenses?busId=${formData.busId}`)
+          const dispensesEndpoint = formData.category === 'Fuel'
+            ? `/api/fuel/dispenses?busId=${formData.busId}`
+            : `/api/urea/dispenses?busId=${formData.busId}`
+          const dispensesRes = await fetch(dispensesEndpoint)
           const dispensesData = await dispensesRes.json()
 
           if (dispensesData.length > 0) {
@@ -81,23 +86,24 @@ export default function ExpenseForm() {
           }
         }
 
-        setFuelInfo({
+        setInventoryInfo({
           currentStock: inventoryData.currentStock || 0,
           lastDispense,
         })
       } catch (error) {
-        console.error('Error fetching fuel info:', error)
+        console.error('Error fetching inventory info:', error)
       } finally {
-        setLoadingFuelInfo(false)
+        setLoadingInventoryInfo(false)
       }
     }
 
-    fetchFuelInfo()
+    fetchInventoryInfo()
   }, [formData.category, formData.busId])
 
-  // Auto-calculate amount for fuel expenses
+  // Auto-calculate amount for fuel/urea expenses
   useEffect(() => {
-    if (formData.category === 'Fuel' && formData.pricePerLitre && formData.litresFilled) {
+    const isFuelOrUrea = formData.category === 'Fuel' || formData.category === 'Urea'
+    if (isFuelOrUrea && formData.pricePerLitre && formData.litresFilled) {
       const price = parseFloat(formData.pricePerLitre)
       const litres = parseFloat(formData.litresFilled)
       if (!isNaN(price) && !isNaN(litres)) {
@@ -124,10 +130,10 @@ export default function ExpenseForm() {
           odometerReading: formData.odometerReading
             ? parseInt(formData.odometerReading)
             : null,
-          pricePerLitre: formData.pricePerLitre && formData.category === 'Fuel'
+          pricePerLitre: formData.pricePerLitre && (formData.category === 'Fuel' || formData.category === 'Urea')
             ? parseFloat(formData.pricePerLitre)
             : null,
-          litresFilled: formData.litresFilled && formData.category === 'Fuel'
+          litresFilled: formData.litresFilled && (formData.category === 'Fuel' || formData.category === 'Urea')
             ? parseFloat(formData.litresFilled)
             : null,
         }),
@@ -210,6 +216,7 @@ export default function ExpenseForm() {
             required
           >
             <option value="Fuel">Fuel</option>
+            <option value="Urea">Urea</option>
             <option value="Maintenance">Maintenance</option>
             <option value="Salary">Salary</option>
             <option value="Insurance">Insurance</option>
@@ -217,61 +224,63 @@ export default function ExpenseForm() {
           </select>
         </div>
 
-        {/* Fuel Info Panel - shows when Fuel category is selected */}
-        {formData.category === 'Fuel' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2 text-blue-800 font-medium">
-              <Fuel className="h-5 w-5" />
-              <span>Fuel Inventory Info</span>
+        {/* Inventory Info Panel - shows when Fuel or Urea category is selected */}
+        {(formData.category === 'Fuel' || formData.category === 'Urea') && (
+          <div className={`${formData.category === 'Fuel' ? 'bg-blue-50 border-blue-200' : 'bg-purple-50 border-purple-200'} border rounded-lg p-4 space-y-3`}>
+            <div className={`flex items-center gap-2 ${formData.category === 'Fuel' ? 'text-blue-800' : 'text-purple-800'} font-medium`}>
+              {formData.category === 'Fuel' ? <Fuel className="h-5 w-5" /> : <Droplet className="h-5 w-5" />}
+              <span>{formData.category} Inventory Info</span>
             </div>
 
-            {loadingFuelInfo ? (
-              <div className="text-sm text-blue-600">Loading fuel information...</div>
-            ) : fuelInfo ? (
+            {loadingInventoryInfo ? (
+              <div className={`text-sm ${formData.category === 'Fuel' ? 'text-blue-600' : 'text-purple-600'}`}>
+                Loading {formData.category.toLowerCase()} information...
+              </div>
+            ) : inventoryInfo ? (
               <div className="space-y-2">
                 {/* Available Stock */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Available in Stock:</span>
-                  <span className={`font-semibold ${fuelInfo.currentStock > 50 ? 'text-green-600' : fuelInfo.currentStock > 20 ? 'text-yellow-600' : 'text-red-600'}`}>
-                    {fuelInfo.currentStock.toFixed(2)} litres
+                  <span className={`font-semibold ${inventoryInfo.currentStock > 50 ? 'text-green-600' : inventoryInfo.currentStock > 20 ? 'text-yellow-600' : 'text-red-600'}`}>
+                    {inventoryInfo.currentStock.toFixed(2)} litres
                   </span>
                 </div>
 
                 {/* Low Stock Warning */}
-                {fuelInfo.currentStock < 50 && (
+                {inventoryInfo.currentStock < 50 && (
                   <div className="flex items-center gap-2 text-amber-600 text-sm">
                     <AlertCircle className="h-4 w-4" />
-                    <span>Low fuel stock! Consider purchasing more.</span>
+                    <span>Low {formData.category.toLowerCase()} stock! Consider purchasing more.</span>
                   </div>
                 )}
 
                 {/* Last Dispense Info - only when bus is selected */}
-                {formData.busId && fuelInfo.lastDispense && (
-                  <div className="pt-2 border-t border-blue-200">
+                {formData.busId && inventoryInfo.lastDispense && (
+                  <div className={`pt-2 border-t ${formData.category === 'Fuel' ? 'border-blue-200' : 'border-purple-200'}`}>
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock className="h-4 w-4" />
                       <span>
-                        Last dispensed: <strong>{fuelInfo.lastDispense.quantity} litres</strong>,{' '}
-                        <strong className={fuelInfo.lastDispense.daysAgo > 7 ? 'text-orange-600' : 'text-gray-900'}>
-                          {fuelInfo.lastDispense.daysAgo === 0
+                        Last dispensed: <strong>{inventoryInfo.lastDispense.quantity} litres</strong>,{' '}
+                        <strong className={inventoryInfo.lastDispense.daysAgo > 7 ? 'text-orange-600' : 'text-gray-900'}>
+                          {inventoryInfo.lastDispense.daysAgo === 0
                             ? 'today'
-                            : fuelInfo.lastDispense.daysAgo === 1
+                            : inventoryInfo.lastDispense.daysAgo === 1
                               ? '1 day ago'
-                              : `${fuelInfo.lastDispense.daysAgo} days ago`}
+                              : `${inventoryInfo.lastDispense.daysAgo} days ago`}
                         </strong>
                       </span>
                     </div>
                   </div>
                 )}
 
-                {formData.busId && !fuelInfo.lastDispense && (
-                  <div className="pt-2 border-t border-blue-200 text-sm text-gray-500">
-                    No previous fuel dispense records for this bus.
+                {formData.busId && !inventoryInfo.lastDispense && (
+                  <div className={`pt-2 border-t ${formData.category === 'Fuel' ? 'border-blue-200' : 'border-purple-200'} text-sm text-gray-500`}>
+                    No previous {formData.category.toLowerCase()} dispense records for this bus.
                   </div>
                 )}
 
                 {!formData.busId && (
-                  <div className="text-sm text-blue-600 italic">
+                  <div className={`text-sm ${formData.category === 'Fuel' ? 'text-blue-600' : 'text-purple-600'} italic`}>
                     Select a bus to see its last dispense info.
                   </div>
                 )}
@@ -280,7 +289,7 @@ export default function ExpenseForm() {
           </div>
         )}
 
-        {formData.category === 'Fuel' ? (
+        {(formData.category === 'Fuel' || formData.category === 'Urea') ? (
           <>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -331,18 +340,20 @@ export default function ExpenseForm() {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Odometer Reading (km)
-              </label>
-              <input
-                type="number"
-                value={formData.odometerReading}
-                onChange={(e) => setFormData({ ...formData, odometerReading: e.target.value })}
-                className="input-field"
-                placeholder="e.g., 45000"
-              />
-            </div>
+            {formData.category === 'Fuel' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Odometer Reading (km)
+                </label>
+                <input
+                  type="number"
+                  value={formData.odometerReading}
+                  onChange={(e) => setFormData({ ...formData, odometerReading: e.target.value })}
+                  className="input-field"
+                  placeholder="e.g., 45000"
+                />
+              </div>
+            )}
           </>
         ) : (
           <div>
