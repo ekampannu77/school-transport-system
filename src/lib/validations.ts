@@ -115,7 +115,7 @@ export const createStudentSchema = z.object({
   emergencyContact: z.string().max(20).optional().nullable(),
   startDate: optionalDateString,
   endDate: optionalDateString,
-  busId: z.string().min(1, 'Bus ID is required'),
+  busId: z.string().cuid('Invalid Bus ID format'),
   feeWaiverPercent: z.coerce.number().min(0).max(100).optional().default(0),
   isActive: z.boolean().optional().default(true),
 })

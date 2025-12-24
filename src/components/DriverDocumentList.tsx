@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { FileText, Calendar, AlertCircle, Trash2, Eye, X } from 'lucide-react'
 import { formatDate } from '@/lib/dateUtils'
 
@@ -20,11 +20,7 @@ export default function DriverDocumentList({ driverId }: { driverId: string }) {
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchDocuments()
-  }, [driverId])
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       const response = await fetch(`/api/drivers/${driverId}/documents`)
       const data = await response.json()
@@ -35,7 +31,11 @@ export default function DriverDocumentList({ driverId }: { driverId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [driverId])
+
+  useEffect(() => {
+    fetchDocuments()
+  }, [fetchDocuments])
 
   const handleDelete = async (docId: string) => {
     try {

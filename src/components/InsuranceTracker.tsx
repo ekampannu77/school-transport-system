@@ -126,7 +126,7 @@ export default function InsuranceTracker({
                 <div className="text-sm">
                   <p className="font-medium text-blue-900">Reminder Set</p>
                   <p className="text-blue-700">
-                    You'll be reminded on {formatDate(insuranceReminder)}
+                    You&apos;ll be reminded on {formatDate(insuranceReminder)}
                   </p>
                 </div>
               </div>

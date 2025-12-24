@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { User, FileText, CreditCard, AlertCircle, Phone, MapPin } from 'lucide-react'
 import DriverDocumentUploader from './DriverDocumentUploader'
 import DriverDocumentList from './DriverDocumentList'
@@ -38,11 +38,7 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'documents' | 'license'>('overview')
 
-  useEffect(() => {
-    fetchDriverDetails()
-  }, [driverId])
-
-  const fetchDriverDetails = async () => {
+  const fetchDriverDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/drivers/${driverId}`)
       if (!response.ok) {
@@ -55,7 +51,11 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
     } finally {
       setLoading(false)
     }
-  }
+  }, [driverId])
+
+  useEffect(() => {
+    fetchDriverDetails()
+  }, [fetchDriverDetails])
 
   if (loading) {
     return (
@@ -76,7 +76,7 @@ export default function DriverDetailsContent({ driverId }: { driverId: string })
         <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
         <h3 className="text-lg font-medium text-gray-900">Driver not found</h3>
         <p className="text-sm text-gray-500 mt-2">
-          The driver you're looking for doesn't exist or has been removed.
+          The driver you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
       </div>
     )

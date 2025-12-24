@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Bus, FileText, Calendar, AlertCircle, DollarSign, Upload, Users, CheckCircle, XCircle, Gauge, TrendingUp } from 'lucide-react'
 import BusDocumentUploader from './BusDocumentUploader'
 import BusDocumentList from './BusDocumentList'
@@ -120,11 +120,7 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'students' | 'documents' | 'expenses'>('students')
 
-  useEffect(() => {
-    fetchBusDetails()
-  }, [busId])
-
-  const fetchBusDetails = async () => {
+  const fetchBusDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/fleet/buses/${busId}`)
       if (!response.ok) {
@@ -137,7 +133,11 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [busId])
+
+  useEffect(() => {
+    fetchBusDetails()
+  }, [fetchBusDetails])
 
   if (loading) {
     return (
@@ -158,7 +158,7 @@ export default function BusDetailsContent({ busId }: { busId: string }) {
         <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
         <h3 className="text-lg font-medium text-gray-900">Bus not found</h3>
         <p className="text-sm text-gray-500 mt-2">
-          The bus you're looking for doesn't exist or has been removed.
+          The bus you&apos;re looking for doesn&apos;t exist or has been removed.
         </p>
       </div>
     )

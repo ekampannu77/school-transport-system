@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Users, Plus, Trash2, MapPin, Phone, Edit, DollarSign, Receipt, UserMinus, UserPlus } from 'lucide-react'
 import AddStudentModal from './AddStudentModal'
 import EditStudentModal from './EditStudentModal'
@@ -58,11 +58,7 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([])
   const [loadingHistory, setLoadingHistory] = useState(false)
 
-  useEffect(() => {
-    fetchStudents()
-  }, [busId])
-
-  const fetchStudents = async () => {
+  const fetchStudents = useCallback(async () => {
     try {
       const response = await fetch(`/api/students?busId=${busId}&pageSize=500`)
       const result = await response.json()
@@ -83,7 +79,11 @@ export default function BusStudentsList({ busId, seatingCapacity }: BusStudentsL
     } finally {
       setLoading(false)
     }
-  }
+  }, [busId])
+
+  useEffect(() => {
+    fetchStudents()
+  }, [fetchStudents])
 
   const handleEdit = (student: Student) => {
     setEditingStudent(student)

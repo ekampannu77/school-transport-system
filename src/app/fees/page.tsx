@@ -37,37 +37,6 @@ export default function FeeCollectionPage() {
   const [filterBus, setFilterBus] = useState('')
   const [studentPayments, setStudentPayments] = useState<{ [key: string]: Payment[] }>({})
 
-  useEffect(() => {
-    fetchStudents()
-  }, [])
-
-  useEffect(() => {
-    filterStudentsData()
-  }, [searchTerm, students, filterClass, filterBus])
-
-  const fetchStudents = async () => {
-    try {
-      // Fetch all active students with a large page size
-      const response = await fetch('/api/students?isActive=true&pageSize=1000')
-      const result = await response.json()
-
-      // Handle both paginated response and direct array response
-      const studentList = Array.isArray(result) ? result : (result.data || [])
-
-      setStudents(studentList)
-      setFilteredStudents(studentList)
-
-      // Fetch payments for all students
-      if (studentList.length > 0) {
-        fetchPaymentsForStudents(studentList)
-      }
-    } catch (error) {
-      console.error('Error fetching students:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   const fetchPaymentsForStudents = async (studentList: Student[]) => {
     try {
       const currentYear = new Date().getFullYear()
@@ -97,6 +66,34 @@ export default function FeeCollectionPage() {
     }
   }
 
+  const fetchStudents = async () => {
+    try {
+      // Fetch all active students with a large page size
+      const response = await fetch('/api/students?isActive=true&pageSize=1000')
+      const result = await response.json()
+
+      // Handle both paginated response and direct array response
+      const studentList = Array.isArray(result) ? result : (result.data || [])
+
+      setStudents(studentList)
+      setFilteredStudents(studentList)
+
+      // Fetch payments for all students
+      if (studentList.length > 0) {
+        fetchPaymentsForStudents(studentList)
+      }
+    } catch (error) {
+      console.error('Error fetching students:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStudents()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const filterStudentsData = () => {
     let filtered = students
 
@@ -122,6 +119,11 @@ export default function FeeCollectionPage() {
 
     setFilteredStudents(filtered)
   }
+
+  useEffect(() => {
+    filterStudentsData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, students, filterClass, filterBus])
 
   const handleCollectPayment = (student: Student) => {
     setSelectedStudent(student)
