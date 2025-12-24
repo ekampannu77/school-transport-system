@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Calendar, DollarSign, Fuel, Wrench, Shield, MoreHorizontal, Trash2 } from 'lucide-react'
 import { formatDate } from '@/lib/dateUtils'
 
@@ -56,21 +56,7 @@ export default function BusMonthlyExpenses({ busId }: { busId: string }) {
   const [initialized, setInitialized] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
 
-  // Initial fetch to get available months
-  useEffect(() => {
-    if (!initialized) {
-      fetchAvailableMonths()
-    }
-  }, [busId, initialized])
-
-  // Fetch expenses when month selection changes
-  useEffect(() => {
-    if (initialized && selectedYear && selectedMonth) {
-      fetchMonthlyExpenses()
-    }
-  }, [busId, selectedYear, selectedMonth, initialized])
-
-  const fetchAvailableMonths = async () => {
+  const fetchAvailableMonths = useCallback(async () => {
     try {
       // Fetch with current month first to get available months list
       const now = new Date()
@@ -99,9 +85,9 @@ export default function BusMonthlyExpenses({ busId }: { busId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [busId])
 
-  const fetchMonthlyExpenses = async () => {
+  const fetchMonthlyExpenses = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(
@@ -117,7 +103,21 @@ export default function BusMonthlyExpenses({ busId }: { busId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [busId, selectedYear, selectedMonth])
+
+  // Initial fetch to get available months
+  useEffect(() => {
+    if (!initialized) {
+      fetchAvailableMonths()
+    }
+  }, [initialized, fetchAvailableMonths])
+
+  // Fetch expenses when month selection changes
+  useEffect(() => {
+    if (initialized && selectedYear && selectedMonth) {
+      fetchMonthlyExpenses()
+    }
+  }, [initialized, selectedYear, selectedMonth, fetchMonthlyExpenses])
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const [year, month] = e.target.value.split('-').map(Number)

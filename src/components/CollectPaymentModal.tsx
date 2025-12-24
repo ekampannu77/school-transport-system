@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X } from 'lucide-react'
 
 interface Student {
@@ -41,12 +41,40 @@ export default function CollectPaymentModal({ student, isOpen, onClose, onSucces
     return `${currentYear - 1}-${String(currentYear).slice(2)}`
   }
 
-  // Calculate quarterly fee
-  const calculateQuarterlyFee = () => {
-    const discount = student.feeWaiverPercent || 0
-    const baseQuarterlyFee = student.monthlyFee * 3
-    return baseQuarterlyFee * (1 - discount / 100)
-  }
+  const calculateQuarterlyFee = useCallback(() => {
+    // If student has a monthly fee
+    if (student.monthlyFee) {
+      // Quarter is 3 months
+      const baseFee = student.monthlyFee * 3
+      
+      // Apply waiver if any
+      if (student.feeWaiverPercent && student.feeWaiverPercent > 0) {
+        const waiverAmount = (baseFee * student.feeWaiverPercent) / 100
+        return baseFee - waiverAmount
+      }
+      
+      return baseFee
+    }
+    return 0
+  }, [student.monthlyFee, student.feeWaiverPercent])
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(prev => ({
+        ...prev,
+        amount: String(calculateQuarterlyFee()),
+        remarks: '',
+        transactionId: '',
+        checkNumber: '',
+        bankName: '',
+        paymentMethod: 'CASH',
+        quarter: getCurrentQuarter(),
+        academicYear: getAcademicYear(),
+        collectedBy: '',
+        paymentDate: new Date().toISOString().split('T')[0],
+      }))
+    }
+  }, [isOpen, calculateQuarterlyFee])
 
   const [formData, setFormData] = useState({
     amount: String(calculateQuarterlyFee()),
@@ -67,7 +95,7 @@ export default function CollectPaymentModal({ student, isOpen, onClose, onSucces
       ...prev,
       amount: String(calculateQuarterlyFee()),
     }))
-  }, [student.monthlyFee, student.feeWaiverPercent])
+  }, [calculateQuarterlyFee])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

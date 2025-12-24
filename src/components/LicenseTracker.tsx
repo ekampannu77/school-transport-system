@@ -126,7 +126,7 @@ export default function LicenseTracker({
                 <div className="text-sm">
                   <p className="font-medium text-blue-900">Reminder Set</p>
                   <p className="text-blue-700">
-                    You'll be reminded on {formatDate(licenseReminder)}
+                    You&apos;ll be reminded on {formatDate(licenseReminder)}
                   </p>
                 </div>
               </div>

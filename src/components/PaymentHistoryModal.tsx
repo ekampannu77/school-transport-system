@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, Receipt } from 'lucide-react'
 import { formatDate } from '@/lib/dateUtils'
 
@@ -39,31 +39,24 @@ export default function PaymentHistoryModal({ student, isOpen, onClose }: Paymen
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (isOpen && student) {
-      fetchPayments()
-    }
-  }, [isOpen, student])
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true)
-    setError('')
-
     try {
       const response = await fetch(`/api/payments?studentId=${student.id}`)
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch payments')
-      }
-
-      setPayments(data)
-    } catch (err: any) {
-      setError(err.message)
+      setPayments(Array.isArray(data) ? data : [])
+    } catch (error) {
+      console.error('Error fetching payments:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [student.id])
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchPayments()
+    }
+  }, [isOpen, fetchPayments])
 
   const getPaymentMethodDisplay = (method: string) => {
     const methods: { [key: string]: string } = {

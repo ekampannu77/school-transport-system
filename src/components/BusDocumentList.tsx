@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { FileText, Calendar, Trash2, Eye, AlertCircle, X } from 'lucide-react'
 import { formatDate } from '@/lib/dateUtils'
 
@@ -20,11 +20,7 @@ export default function BusDocumentList({ busId }: { busId: string }) {
   const [selectedDocument, setSelectedDocument] = useState<string | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchDocuments()
-  }, [busId])
-
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     try {
       const response = await fetch(`/api/fleet/buses/${busId}/documents`)
       const data = await response.json()
@@ -35,7 +31,11 @@ export default function BusDocumentList({ busId }: { busId: string }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [busId])
+
+  useEffect(() => {
+    fetchDocuments()
+  }, [fetchDocuments])
 
   const handleDelete = async (documentId: string) => {
     try {

@@ -221,7 +221,7 @@ describe('Validation Schemas', () => {
         monthlyFee: 1500,
         parentName: 'Parent Name',
         parentContact: '9876543210',
-        busId: '123e4567-e89b-12d3-a456-426614174000',
+        busId: 'clx1234567890abcdefghijkl',
       }
       const result = createStudentSchema.safeParse(validData)
       expect(result.success).toBe(true)
@@ -249,7 +249,7 @@ describe('Validation Schemas', () => {
         monthlyFee: -100,
         parentName: 'Parent Name',
         parentContact: '9876543210',
-        busId: '123e4567-e89b-12d3-a456-426614174000',
+        busId: 'clx1234567890abcdefghijkl',
       }
       const result = createStudentSchema.safeParse(invalidData)
       expect(result.success).toBe(false)
