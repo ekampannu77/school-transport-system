@@ -39,8 +39,8 @@ export async function calculateFuelEfficiency(busId: string): Promise<{
   const lastReading = fuelExpenses[fuelExpenses.length - 1].odometerReading!
   const totalDistance = lastReading - firstReading
 
-  // Calculate total litres filled
-  const totalLitres = fuelExpenses.reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
+  // Calculate total litres filled (excluding the first record as it sets the baseline)
+  const totalLitres = fuelExpenses.slice(1).reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
 
   // Calculate km per litre
   const kmPerLitre = totalDistance > 0 && totalLitres > 0 ? totalDistance / totalLitres : 0
@@ -150,8 +150,8 @@ export async function calculateFuelEfficiencyForPeriod(
   const lastReading = fuelExpenses[fuelExpenses.length - 1].odometerReading!
   const totalDistance = lastReading - firstReading
 
-  // Calculate total litres filled
-  const totalLitres = fuelExpenses.reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
+  // Calculate total litres filled (excluding the first record)
+  const totalLitres = fuelExpenses.slice(1).reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
 
   // Calculate km per litre
   const kmPerLitre = totalDistance > 0 && totalLitres > 0 ? totalDistance / totalLitres : 0
@@ -244,7 +244,7 @@ export async function calculateFuelEfficiencyBatch(busIds: string[]): Promise<Ma
     const lastReading = fuelExpenses[fuelExpenses.length - 1].odometerReading!
     const totalDistance = lastReading - firstReading
 
-    const totalLitres = fuelExpenses.reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
+    const totalLitres = fuelExpenses.slice(1).reduce((sum, expense) => sum + (expense.litresFilled || 0), 0)
     const kmPerLitre = totalDistance > 0 && totalLitres > 0 ? totalDistance / totalLitres : 0
 
     results.set(busId, {

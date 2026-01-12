@@ -26,20 +26,20 @@ export default function CollectPaymentModal({ student, isOpen, onClose, onSucces
   const currentMonth = new Date().getMonth() + 1 // 1-12
 
   // Determine current quarter based on month
-  const getCurrentQuarter = () => {
+  const getCurrentQuarter = useCallback(() => {
     if (currentMonth >= 4 && currentMonth <= 6) return 1
     if (currentMonth >= 7 && currentMonth <= 9) return 2
     if (currentMonth >= 10 && currentMonth <= 12) return 3
     return 4 // Jan-Mar
-  }
+  }, [currentMonth])
 
   // Calculate academic year (e.g., "2025-26")
-  const getAcademicYear = () => {
+  const getAcademicYear = useCallback(() => {
     if (currentMonth >= 4) {
       return `${currentYear}-${String(currentYear + 1).slice(2)}`
     }
     return `${currentYear - 1}-${String(currentYear).slice(2)}`
-  }
+  }, [currentMonth, currentYear])
 
   const calculateQuarterlyFee = useCallback(() => {
     // If student has a monthly fee
@@ -74,7 +74,7 @@ export default function CollectPaymentModal({ student, isOpen, onClose, onSucces
         paymentDate: new Date().toISOString().split('T')[0],
       }))
     }
-  }, [isOpen, calculateQuarterlyFee])
+  }, [isOpen, calculateQuarterlyFee, getCurrentQuarter, getAcademicYear])
 
   const [formData, setFormData] = useState({
     amount: String(calculateQuarterlyFee()),
