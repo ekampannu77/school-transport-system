@@ -1,0 +1,16 @@
+
+> school-transport-system@1.0.0 dev
+> next dev
+
+  ▲ Next.js 14.2.33
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1128ms
+ ✓ Compiled /src/middleware in 227ms (139 modules)
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.2s (1100 modules)
+ GET /login?redirect=%2F 200 in 2412ms
+ ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
+ ✓ Compiled in 164ms (520 modules)

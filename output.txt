@@ -1,0 +1,7 @@
+The `npm run db:migrate` command is currently paused, waiting for your input.
+
+It detected that your database schema is not in sync with the migration history and is asking to **reset the "public" schema**. This means **all data in your database will be lost**.
+
+This is often expected when setting up a fresh database for a project.
+
+Do you want to continue and reset the database? Please respond with 'y' to proceed or 'N' to cancel the migration.

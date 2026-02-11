@@ -1,0 +1,18 @@
+
+> school-transport-system@1.0.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+  ▲ Next.js 14.2.33
+  - Local:        http://localhost:3001
+  - Environmen ✓ Compiled /src/middleware in 107ms (139 modules)
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1716ms (1100 modules)
+ GET /login?redirect=%2F 200 in 1926ms
+ ⚠ The "images.domains" configuration is deprecated. Please use "images.remotePatterns" configuration instead.
+ ✓ Compiled in 178ms (520 modules)
+[?25h
+ad.
+ ✓ Compiled in 188ms (520 modules)
+[?25h
