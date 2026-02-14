@@ -256,4 +256,4 @@ This project is private and proprietary.
 
 ## Support
 
-For issues and feature requests, please create an issue in the repository .
+For issues and feature requests, please create an issue in the repository.
