@@ -85,14 +85,17 @@ export function calculateStudentCapacity(seatingCapacity: number): number {
 /**
  * Calculate the number of days remaining until a date
  * Positive = future, Negative = past, 0 = today
+ * Dates are normalised to UTC midnight so timezone differences don't shift the result by a day.
  * @param date - Date string or Date object
  * @param fromDate - Optional reference date (defaults to now)
  * @returns Number of days remaining (can be negative if expired)
  */
 export function calculateDaysRemaining(date: string | Date, fromDate: Date = new Date()): number {
   const targetDate = new Date(date)
-  const diffTime = targetDate.getTime() - fromDate.getTime()
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  // Normalise both dates to UTC midnight to avoid timezone-driven off-by-one errors
+  const targetMidnight = Date.UTC(targetDate.getUTCFullYear(), targetDate.getUTCMonth(), targetDate.getUTCDate())
+  const fromMidnight = Date.UTC(fromDate.getUTCFullYear(), fromDate.getUTCMonth(), fromDate.getUTCDate())
+  return Math.round((targetMidnight - fromMidnight) / (1000 * 60 * 60 * 24))
 }
 
 /**

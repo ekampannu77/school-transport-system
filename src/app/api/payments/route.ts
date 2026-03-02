@@ -9,8 +9,11 @@ async function generateReceiptNumber(maxRetries = 3): Promise<string> {
   const year = new Date().getFullYear()
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
-    // Get the latest payment to determine next sequential number
+    // Get the latest payment for the current year only, so counter resets each year
     const latestPayment = await prisma.payment.findFirst({
+      where: {
+        receiptNumber: { startsWith: `RCPT-${year}-` },
+      },
       orderBy: { createdAt: 'desc' },
       select: { receiptNumber: true },
     })

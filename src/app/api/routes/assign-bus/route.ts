@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getCurrentAcademicYear } from '@/lib/dateUtils'
+import { assignBusToRouteSchema, validateRequest } from '@/lib/validations'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { routeId, busId } = body
 
-    if (!routeId || !busId) {
+    const validation = validateRequest(assignBusToRouteSchema, {
+      ...body,
+      // academicTerm is optional from client; default to current academic year
+      academicTerm: body.academicTerm || getCurrentAcademicYear(),
+    })
+
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'Route ID and Bus ID are required' },
+        { error: validation.error },
         { status: 400 }
       )
     }
+
+    const { routeId, busId } = validation.data
 
     // Check if there's already an active assignment for this route
     const existingAssignment = await prisma.busRoute.findFirst({
@@ -59,7 +68,7 @@ export async function POST(request: NextRequest) {
       data: {
         busId: busId,
         routeId: routeId,
-        academicTerm: new Date().getFullYear().toString(),
+        academicTerm: getCurrentAcademicYear(),
         startDate: new Date(),
       },
     })

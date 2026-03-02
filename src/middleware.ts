@@ -8,7 +8,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow public routes
-  const publicRoutes = ['/login', '/api/auth/login', '/api/auth/register', '/api/auth/check-setup']
+  const publicRoutes = ['/login', '/setup', '/api/auth/login', '/api/auth/register', '/api/auth/check-setup']
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     return NextResponse.next()
   }
@@ -49,6 +49,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|api/auth/register).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)',
   ],
 }

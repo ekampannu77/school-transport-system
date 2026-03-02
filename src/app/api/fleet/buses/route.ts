@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       privateOwnerContact,
       privateOwnerBank,
       schoolCommission,
+      advancePayment,
       routeName,
       startPoint,
       endPoint,
@@ -121,6 +122,7 @@ export async function POST(request: NextRequest) {
         privateOwnerContact: privateOwnerContact || null,
         privateOwnerBank: privateOwnerBank || null,
         schoolCommission: schoolCommission || 0,
+        advancePayment: advancePayment || 0,
       },
     })
 
@@ -482,11 +484,12 @@ export async function PUT(request: NextRequest) {
         })
 
         // Update driver/conductor in BusRoute
+        // Use !== undefined so sending null explicitly clears the field
         await prisma.busRoute.update({
           where: { id: existingBusRoute.id },
           data: {
-            driverId: primaryDriverId || existingBusRoute.driverId,
-            conductorId: conductorId || existingBusRoute.conductorId,
+            driverId: primaryDriverId !== undefined ? (primaryDriverId || null) : existingBusRoute.driverId,
+            conductorId: conductorId !== undefined ? (conductorId || null) : existingBusRoute.conductorId,
           },
         })
       } else {

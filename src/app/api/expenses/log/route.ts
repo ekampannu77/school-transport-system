@@ -24,76 +24,52 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Additional validation for fuel expenses
-    if (category === 'Fuel') {
-      if (!litresFilled || !pricePerLitre) {
-        return NextResponse.json(
-          { error: 'Fuel expenses require litresFilled and pricePerLitre' },
-          { status: 400 }
-        )
-      }
-
-      // Check fuel inventory stock
-      const purchases = await prisma.fuelPurchase.aggregate({
-        _sum: {
-          quantity: true,
-        },
-      })
-
-      const dispenses = await prisma.fuelDispense.aggregate({
-        _sum: {
-          quantity: true,
-        },
-      })
-
-      const totalPurchased = purchases._sum.quantity || 0
-      const totalDispensed = dispenses._sum.quantity || 0
-      const currentStock = totalPurchased - totalDispensed
-
-      if (parseFloat(litresFilled) > currentStock) {
-        return NextResponse.json(
-          { error: `Insufficient fuel in stock. Available: ${currentStock} litres` },
-          { status: 400 }
-        )
-      }
+    // Additional validation for fuel/urea — check fields are present before entering tx
+    if (category === 'Fuel' && (!litresFilled || !pricePerLitre)) {
+      return NextResponse.json(
+        { error: 'Fuel expenses require litresFilled and pricePerLitre' },
+        { status: 400 }
+      )
     }
 
-    // Additional validation for urea expenses
-    if (category === 'Urea') {
-      if (!litresFilled || !pricePerLitre) {
-        return NextResponse.json(
-          { error: 'Urea expenses require litresFilled and pricePerLitre' },
-          { status: 400 }
-        )
-      }
-
-      // Check urea inventory stock
-      const purchases = await prisma.ureaPurchase.aggregate({
-        _sum: {
-          quantity: true,
-        },
-      })
-
-      const dispenses = await prisma.ureaDispense.aggregate({
-        _sum: {
-          quantity: true,
-        },
-      })
-
-      const totalPurchased = purchases._sum.quantity || 0
-      const totalDispensed = dispenses._sum.quantity || 0
-      const currentStock = totalPurchased - totalDispensed
-
-      if (parseFloat(litresFilled) > currentStock) {
-        return NextResponse.json(
-          { error: `Insufficient urea in stock. Available: ${currentStock} litres` },
-          { status: 400 }
-        )
-      }
+    if (category === 'Urea' && (!litresFilled || !pricePerLitre)) {
+      return NextResponse.json(
+        { error: 'Urea expenses require litresFilled and pricePerLitre' },
+        { status: 400 }
+      )
     }
 
-    // Use a transaction to create both expense and fuel dispense (if applicable)
+    // Use a transaction so stock checks and writes are atomic (prevents race conditions)
     const result = await prisma.$transaction(async (tx) => {
+      // Check fuel inventory stock inside the transaction
+      if (category === 'Fuel' && litresFilled) {
+        const purchases = await tx.fuelPurchase.aggregate({ _sum: { quantity: true } })
+        const busDispenses = await tx.fuelDispense.aggregate({ _sum: { quantity: true } })
+        const personalDispenses = await tx.personalVehicleFuelDispense.aggregate({ _sum: { quantity: true } })
+
+        const totalPurchased = purchases._sum.quantity || 0
+        const totalDispensed = (busDispenses._sum.quantity || 0) + (personalDispenses._sum.quantity || 0)
+        const currentStock = totalPurchased - totalDispensed
+
+        if (parseFloat(litresFilled) > currentStock) {
+          throw new Error(`Insufficient fuel in stock. Available: ${currentStock.toFixed(2)} litres`)
+        }
+      }
+
+      // Check urea inventory stock inside the transaction
+      if (category === 'Urea' && litresFilled) {
+        const purchases = await tx.ureaPurchase.aggregate({ _sum: { quantity: true } })
+        const dispenses = await tx.ureaDispense.aggregate({ _sum: { quantity: true } })
+
+        const totalPurchased = purchases._sum.quantity || 0
+        const totalDispensed = dispenses._sum.quantity || 0
+        const currentStock = totalPurchased - totalDispensed
+
+        if (parseFloat(litresFilled) > currentStock) {
+          throw new Error(`Insufficient urea in stock. Available: ${currentStock.toFixed(2)} litres`)
+        }
+      }
+
       // Create expense
       const expense = await tx.expense.create({
         data: {
@@ -145,7 +121,11 @@ export async function POST(request: NextRequest) {
     })
 
     return NextResponse.json(result, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
+    // Surface stock-check errors thrown from inside the transaction as 400
+    if (error?.message?.startsWith('Insufficient')) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     console.error('Error creating expense:', error)
     return NextResponse.json(
       { error: 'Failed to create expense' },

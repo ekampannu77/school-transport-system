@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
+import { verifyTokenEdge } from '@/lib/auth-edge'
 import { registerSchema, validateRequest } from '@/lib/validations'
 import { authLogger } from '@/lib/logger'
 import { withRateLimit, REGISTER_RATE_LIMIT } from '@/lib/rate-limit'
@@ -14,6 +15,29 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check if any users exist (setup mode vs post-setup mode)
+    const userCount = await prisma.user.count()
+
+    if (userCount > 0) {
+      // System already set up — only an authenticated admin can create new users
+      const token = request.cookies.get('auth_token')?.value
+      if (!token) {
+        authLogger.warn('Unauthenticated registration attempt after setup')
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        )
+      }
+      const payload = await verifyTokenEdge(token)
+      if (!payload || (payload as any).role !== 'admin') {
+        authLogger.warn('Non-admin registration attempt', { role: (payload as any)?.role })
+        return NextResponse.json(
+          { error: 'Admin access required to create users' },
+          { status: 403 }
+        )
+      }
+    }
+
     const body = await request.json()
 
     // Validate input
