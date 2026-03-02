@@ -1,20 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import Modal, { Button } from './Modal'
 import { useToast } from './Toast'
-import type { Waypoint } from './RouteMapPicker'
-
-// Dynamic import to avoid SSR issues with Google Maps
-const RouteMapPicker = dynamic(() => import('./RouteMapPicker'), {
-  ssr: false,
-  loading: () => (
-    <div className="bg-gray-100 rounded-lg p-4 h-[300px] flex items-center justify-center">
-      <p className="text-gray-500 text-sm">Loading map...</p>
-    </div>
-  ),
-})
 
 interface AddBusModalProps {
   isOpen: boolean
@@ -57,43 +45,13 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
   const [conductors, setConductors] = useState<StaffMember[]>([])
   const [formData, setFormData] = useState(initialFormData)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [routeWaypoints, setRouteWaypoints] = useState<Waypoint[]>([])
   const toast = useToast()
-
-  // Handle waypoints change from map
-  const handleWaypointsChange = (waypoints: Waypoint[], distance: number) => {
-    setRouteWaypoints(waypoints)
-
-    // Auto-generate route name from first and last waypoint
-    let routeName = ''
-    let startPoint = ''
-    let endPoint = ''
-
-    if (waypoints.length >= 1) {
-      startPoint = `Stop 1`
-      routeName = `Route ${waypoints.length} stops`
-    }
-    if (waypoints.length >= 2) {
-      endPoint = `Stop ${waypoints.length}`
-      routeName = `${startPoint} to ${endPoint}`
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      waypoints: JSON.stringify(waypoints),
-      totalDistanceKm: distance.toString(),
-      routeName: routeName || prev.routeName,
-      startPoint: startPoint || prev.startPoint,
-      endPoint: endPoint || prev.endPoint,
-    }))
-  }
 
   useEffect(() => {
     if (isOpen) {
       fetchStaff()
       setFormData(initialFormData)
       setErrors({})
-      setRouteWaypoints([])
     }
   }, [isOpen])
 
@@ -293,19 +251,11 @@ export default function AddBusModal({ isOpen, onClose, onSuccess }: AddBusModalP
           </div>
         </div>
 
-        {/* Route Assignment Section with Map */}
+        {/* Route Assignment Section */}
         <div className="pt-4 border-t border-gray-200">
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Route Information</h3>
-          <p className="text-xs text-gray-500 mb-3">Click on the map to add route stops (optional)</p>
 
-          {/* Map Picker */}
-          <RouteMapPicker
-            waypoints={routeWaypoints}
-            onChange={handleWaypointsChange}
-          />
-
-          {/* Route Name - can be auto-generated or manually entered */}
-          <div className="mt-4 space-y-3">
+          <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Route Name

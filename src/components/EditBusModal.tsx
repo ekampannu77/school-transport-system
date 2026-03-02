@@ -1,19 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import { X } from 'lucide-react'
-import type { Waypoint } from './RouteMapPicker'
-
-// Dynamic import to avoid SSR issues with Google Maps
-const RouteMapPicker = dynamic(() => import('./RouteMapPicker'), {
-  ssr: false,
-  loading: () => (
-    <div className="bg-gray-100 rounded-lg p-4 h-[300px] flex items-center justify-center">
-      <p className="text-gray-500 text-sm">Loading map...</p>
-    </div>
-  ),
-})
 
 interface Bus {
   id: string
@@ -68,7 +56,6 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
   const [error, setError] = useState<string | null>(null)
   const [drivers, setDrivers] = useState<StaffMember[]>([])
   const [conductors, setConductors] = useState<StaffMember[]>([])
-  const [routeWaypoints, setRouteWaypoints] = useState<Waypoint[]>([])
   const [formData, setFormData] = useState({
     registrationNumber: '',
     chassisNumber: '',
@@ -92,16 +79,6 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
     totalDistanceKm: '0',
   })
 
-  // Handle waypoints change from map
-  const handleWaypointsChange = (waypoints: Waypoint[], distance: number) => {
-    setRouteWaypoints(waypoints)
-    setFormData(prev => ({
-      ...prev,
-      waypoints: JSON.stringify(waypoints),
-      totalDistanceKm: distance.toString(),
-    }))
-  }
-
   useEffect(() => {
     if (isOpen) {
       fetchStaff()
@@ -112,17 +89,6 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
     if (bus) {
       const currentRoute = bus.busRoutes?.[0]?.route
       const currentConductor = bus.busRoutes?.[0]?.conductor
-
-      // Parse existing waypoints if available
-      let existingWaypoints: Waypoint[] = []
-      if (currentRoute?.waypoints) {
-        try {
-          existingWaypoints = JSON.parse(currentRoute.waypoints)
-        } catch (e) {
-          console.error('Error parsing waypoints:', e)
-        }
-      }
-      setRouteWaypoints(existingWaypoints)
 
       setFormData({
         registrationNumber: bus.registrationNumber,
@@ -435,19 +401,11 @@ export default function EditBusModal({ isOpen, bus, onClose, onSuccess }: EditBu
             </div>
           </div>
 
-          {/* Route Information Section with Map */}
+          {/* Route Information Section */}
           <div className="pt-4 border-t border-gray-200">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Route Information</h3>
-            <p className="text-xs text-gray-500 mb-3">Click on the map to add/edit route stops</p>
 
-            {/* Map Picker */}
-            <RouteMapPicker
-              waypoints={routeWaypoints}
-              onChange={handleWaypointsChange}
-            />
-
-            {/* Route Name and Points */}
-            <div className="mt-4 space-y-3">
+            <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Route Name
